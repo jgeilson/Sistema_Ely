@@ -1,0 +1,6 @@
+{
+  "name": "Sistema de Avaliação Socioeconômica",
+  "description": "Sistema para gestão de cadastros, análise de renda e classificação de estudantes para programas de auxílio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
