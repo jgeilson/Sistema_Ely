@@ -34,7 +34,10 @@ export const fetchAllData = async () => {
     incomeValue: Number(row[5] || 0),
     scores: row[6] ? JSON.parse(row[6]) : { FE: 0, RF: 0, IV: 0, FA: 0 },
     createdAt: row[7] || new Date().toISOString(),
-    edital: row[8] || ''
+    edital: row[8] || '',
+    createdBy: row[9] || '',
+    updatedBy: row[10] || '',
+    updatedAt: row[11] || ''
   }));
 
   const nucleusMembers: NucleusMember[] = nucleoRows.map((row: any[]) => ({

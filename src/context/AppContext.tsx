@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Student, NucleusMember, ClassificationResult } from '../types';
+import { Student, NucleusMember, ClassificationResult, PendencyDetail } from '../types';
 import { MINIMUM_WAGE } from '../constants';
 import { 
   initializeSpreadsheet, 
@@ -169,24 +169,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return state.students.map(student => {
       const family = state.nucleusMembers.filter(n => n.studentId === student.id);
       
-      // Checar se há documentos incompletos / não enviados (Causa Indeferimento imediato)
-      const hasMissingDoc = (docs: any[]) => docs.some(d => d.status === 'Incompleto' || d.status === 'Não Enviou');
-      
-      let isDeferred = true;
-      let reason = '';
+      const studentDocPendencies = [
+        ...student.idDocs.filter(d => d.status === 'Incompleto' || d.status === 'Não Enviou'),
+        ...student.incomeDocs.filter(d => d.status === 'Incompleto' || d.status === 'Não Enviou')
+      ];
 
-      if (hasMissingDoc(student.idDocs) || hasMissingDoc(student.incomeDocs)) {
-        isDeferred = false;
-        reason = 'Documentação do estudante incompleta ou não enviada.';
-      } else {
-        for (const member of family) {
-          if (hasMissingDoc(member.idDocs) || hasMissingDoc(member.incomeDocs)) {
-            isDeferred = false;
-            reason = 'Documentação do núcleo familiar incompleta ou não enviada.';
-            break;
-          }
+      const familyPendenciesList: PendencyDetail[] = [];
+      for (const member of family) {
+        const memberDocPendencies = [
+          ...member.idDocs.filter(d => d.status === 'Incompleto' || d.status === 'Não Enviou'),
+          ...member.incomeDocs.filter(d => d.status === 'Incompleto' || d.status === 'Não Enviou')
+        ];
+        if (memberDocPendencies.length > 0) {
+          familyPendenciesList.push({
+            personName: member.name,
+            isStudent: false,
+            documents: memberDocPendencies.map(d => ({
+              name: d.name,
+              observation: d.observation
+            }))
+          });
         }
       }
+
+      const pendencies: PendencyDetail[] = [];
+      if (studentDocPendencies.length > 0) {
+        pendencies.push({
+          personName: student.name,
+          isStudent: true,
+          documents: studentDocPendencies.map(d => ({
+            name: d.name,
+            observation: d.observation
+          }))
+        });
+      }
+      pendencies.push(...familyPendenciesList);
+
+      const isDeferred = pendencies.length === 0;
+      
+      const reasonParts = pendencies.map(group => {
+        const docsStr = group.documents.map(d => {
+          return `${d.name}${d.observation ? ` (Obs: "${d.observation}")` : ''}`;
+        }).join(', ');
+        const roleLabel = group.isStudent ? 'Estudante' : 'Familiar';
+        return `${group.personName} (${roleLabel}): ${docsStr}`;
+      });
+      const reason = isDeferred ? '' : `Pendências: ${reasonParts.join('; ')}.`;
 
       const familySize = family.length + 1; // +1 for the student
       const totalIncome = student.incomeValue + family.reduce((acc, m) => acc + m.incomeValue, 0);
@@ -207,6 +235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         student,
         status: isDeferred ? 'Deferido' : 'Indeferido',
         reason,
+        pendencies,
         familySize,
         totalIncome,
         perCapitaIncome,

@@ -20,6 +20,7 @@ export function CadastroEstudante() {
   const editais = getEditais();
   
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const currentStudent = state.students.find(s => s.id === editingStudentId);
   const [isNewRegistration, setIsNewRegistration] = useState(false);
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState(false);
@@ -35,6 +36,7 @@ export function CadastroEstudante() {
   const [incomeValue, setIncomeValue] = useState<string>('');
   const [scores, setScores] = useState({ FE: '', RF: '', IV: '', FA: '' });
   const [success, setSuccess] = useState('');
+  const [redirectAfterSave, setRedirectAfterSave] = useState(false);
 
   const handleDocChange = (type: 'id' | 'income', index: number, field: string, value: string) => {
     const list = type === 'id' ? [...idDocs] : [...incomeDocs];
@@ -50,8 +52,12 @@ export function CadastroEstudante() {
       return;
     }
 
+    const targetStudentId = editingStudentId || crypto.randomUUID();
+    const activeUser = localStorage.getItem('auth_user') || 'Desconhecido';
+    const originalStudent = editingStudentId ? state.students.find(st => st.id === editingStudentId) : null;
+
     const studentData: Student = {
-      id: editingStudentId || crypto.randomUUID(),
+      id: targetStudentId,
       name,
       city,
       edital: edital,
@@ -64,7 +70,10 @@ export function CadastroEstudante() {
         IV: Number(scores.IV) || 0,
         FA: Number(scores.FA) || 0,
       },
-      createdAt: new Date().toISOString()
+      createdAt: originalStudent ? originalStudent.createdAt : new Date().toISOString(),
+      createdBy: originalStudent ? (originalStudent.createdBy || '') : activeUser,
+      updatedBy: editingStudentId ? activeUser : '',
+      updatedAt: editingStudentId ? new Date().toISOString() : ''
     };
 
     if (editingStudentId) {
@@ -73,6 +82,12 @@ export function CadastroEstudante() {
     } else {
       await addStudent(studentData);
       setSuccess('Ficha do estudante cadastrada com sucesso!');
+    }
+    
+    if (redirectAfterSave) {
+      setSelectedStudentIdForNucleus(targetStudentId);
+      setActiveTab('nucleo');
+      setRedirectAfterSave(false);
     }
     
     resetForm();
@@ -125,20 +140,23 @@ export function CadastroEstudante() {
     }
 
     try {
-      const currentStudent = state.students.find(s => s.id === editingStudentId);
       if (!currentStudent) {
         alert("Erro: Cadastro estudantil original não foi localizado!");
         return;
       }
 
       const newStudentId = crypto.randomUUID();
+      const activeUser = localStorage.getItem('auth_user') || 'Desconhecido';
       
       // Duplicando o registro do estudante no novo Edital informado
       const duplicatedStudent: Student = {
         ...currentStudent,
         id: newStudentId,
         edital: targetEdital,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        createdBy: activeUser,
+        updatedBy: '',
+        updatedAt: ''
       };
 
       await addStudent(duplicatedStudent);
@@ -278,9 +296,26 @@ export function CadastroEstudante() {
                 <h2 className="text-md font-bold text-slate-800">
                   {editingStudentId ? `Ficha Cadastral: ${name}` : 'Novo Cadastro de Estudante'}
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {editingStudentId ? 'Altere as informações abaixo e clique em Salvar.' : 'Anexos enviados pelo estudante.'}
-                </p>
+                <div className="text-xs text-slate-500 mt-0.5 space-y-0.5 flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                  {editingStudentId ? (
+                    <>
+                      <span>Altere as informações abaixo e clique em Salvar.</span>
+                      {currentStudent?.createdBy && (
+                        <span className="text-indigo-600 font-medium">
+                          • Criado por: <strong className="font-bold text-indigo-700">{currentStudent.createdBy}</strong>
+                        </span>
+                      )}
+                      {currentStudent?.updatedBy && (
+                        <span className="text-amber-600 font-medium">
+                          • Editado por: <strong className="font-bold text-amber-700">{currentStudent.updatedBy}</strong>
+                          {currentStudent.updatedAt && ` em ${new Date(currentStudent.updatedAt).toLocaleString('pt-BR')}`}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span>Anexos enviados pelo estudante.</span>
+                  )}
+                </div>
               </div>
             </div>
             <button 
@@ -480,10 +515,10 @@ export function CadastroEstudante() {
 
                 <div className="bg-blue-50/15 p-4 rounded-2xl border border-blue-100 hover:border-blue-200 transition-colors shadow-xs">
                    <div className="flex items-center justify-between mb-1">
-                     <span className="text-[9px] font-bold text-blue-550 uppercase tracking-widest">Score Extra</span>
-                     <span className="bg-blue-100/60 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Força de Estudo">FE</span>
+                     <span className="text-[9px] font-bold text-blue-550 uppercase tracking-widest">Critério</span>
+                     <span className="bg-blue-100/60 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Formação Escolar">FE</span>
                    </div>
-                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Força de Estudo / Desempenho">Força de Estudo</label>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Formação Escolar (se estudou em escola pública ou não)">Formação Escolar</label>
                    <input 
                      type="number" 
                      value={scores.FE} 
@@ -495,10 +530,10 @@ export function CadastroEstudante() {
 
                 <div className="bg-emerald-50/15 p-4 rounded-2xl border border-emerald-100 hover:border-emerald-200 transition-colors shadow-xs">
                    <div className="flex items-center justify-between mb-1">
-                     <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Score Extra</span>
-                     <span className="bg-emerald-105/65 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Renda Familiar">RF</span>
+                     <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Critério</span>
+                     <span className="bg-emerald-105/65 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Componente Familiar">RF</span>
                    </div>
-                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Renda Familiar">Renda Familiar</label>
+                   <label className="block text-xs font-bold text-slate-705 leading-normal mb-2" title="Critério de pontuação familiar">Componente Familiar</label>
                    <input 
                      type="number" 
                      value={scores.RF} 
@@ -510,7 +545,7 @@ export function CadastroEstudante() {
 
                 <div className="bg-amber-50/15 p-4 rounded-2xl border border-amber-100/70 hover:border-amber-250 transition-colors shadow-xs">
                    <div className="flex items-center justify-between mb-1">
-                     <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Score Extra</span>
+                     <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Critério</span>
                      <span className="bg-amber-100/60 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Índice de Vulnerabilidade">IV</span>
                    </div>
                    <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Índice de Vulnerabilidade">Vulnerabilidade (IV)</label>
@@ -525,10 +560,10 @@ export function CadastroEstudante() {
 
                 <div className="bg-purple-50/15 p-4 rounded-2xl border border-purple-100 hover:border-purple-200 transition-colors shadow-xs">
                    <div className="flex items-center justify-between mb-1">
-                     <span className="text-[9px] font-bold text-purple-600 uppercase tracking-widest">Score Extra</span>
-                     <span className="bg-purple-100/60 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Fator de Ajuste">FA</span>
+                     <span className="text-[9px] font-bold text-purple-600 uppercase tracking-widest">Critério</span>
+                     <span className="bg-purple-100/60 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Fator de Auxílio">FA</span>
                    </div>
-                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Fator de Ajuste">Ajuste Técnico (FA)</label>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Fator de Auxílio (se já possui ou não outro auxílio ativo)">Fator de Auxílio (FA)</label>
                    <input 
                      type="number" 
                      value={scores.FA} 
@@ -539,7 +574,7 @@ export function CadastroEstudante() {
                 </div>
               </div>
               <p className="text-[10px] text-slate-400 mt-3 font-medium">
-                *Os campos de pontuação extra (FE, RF, IV, FA) são atribuídos facultativamente pela comissão avaliadora e incidem sobre a nota de classificação global.
+                *Os campos de pontuação (FE, RF, IV, FA) são atribuídos facultatively pela comissão avaliadora e incidem sobre a nota de classificação global.
               </p>
             </div>
 
@@ -614,21 +649,7 @@ export function CadastroEstudante() {
                   )}
                 </div>
  
-                <div className="flex gap-3 shrink-0 w-full sm:w-auto justify-end">
-                  {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Botão de atalho inteligente que agiliza o fluxo de preenchimento */}
-                  {editingStudentId && (
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setSelectedStudentIdForNucleus(editingStudentId);
-                        setActiveTab('nucleo');
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg hover:shadow transition-all group cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Users className="w-4 h-4 transition-transform group-hover:scale-110" />
-                      Cadastrar Grupo Familiar
-                    </button>
-                  )}
+                <div className="flex flex-wrap gap-3 shrink-0 w-full sm:w-auto justify-end">
                   <button 
                     type="button" 
                     onClick={resetForm}
@@ -636,7 +657,21 @@ export function CadastroEstudante() {
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer text-xs shadow-sm">
+
+                  <button 
+                    type="submit" 
+                    onClick={() => setRedirectAfterSave(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg hover:shadow transition-all group cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Users className="w-4 h-4 transition-transform group-hover:scale-110" />
+                    {editingStudentId ? 'Salvar e Ir para Família' : 'Salvar e Ir para Grupo Familiar'}
+                  </button>
+
+                  <button 
+                    type="submit" 
+                    onClick={() => setRedirectAfterSave(false)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer text-xs shadow-sm"
+                  >
                     {editingStudentId ? 'Salvar Alterações' : 'Confirmar e Cadastrar'}
                   </button>
                 </div>

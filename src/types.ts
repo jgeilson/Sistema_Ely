@@ -23,6 +23,9 @@ export interface Student {
   incomeValue: number;
   scores: Scores;
   createdAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface NucleusMember {
@@ -34,10 +37,20 @@ export interface NucleusMember {
   incomeValue: number;
 }
 
+export interface PendencyDetail {
+  personName: string;
+  isStudent: boolean;
+  documents: {
+    name: string;
+    observation?: string;
+  }[];
+}
+
 export interface ClassificationResult {
   student: Student;
   status: 'Deferido' | 'Indeferido';
   reason?: string;
+  pendencies?: PendencyDetail[];
   familySize: number;
   totalIncome: number;
   perCapitaIncome: number;

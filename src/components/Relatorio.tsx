@@ -24,7 +24,7 @@ export function Relatorio() {
 
   const getDocSummaryContext = (docs: any[]) => {
     const comp = docs.filter(d => d.status === 'Completo').map(d => d.name).join(', ');
-    const inc = docs.filter(d => d.status === 'Incompleto').map(d => `${d.name} (${d.observation || 'sem observação'})`).join(', ');
+    const inc = docs.filter(d => d.status === 'Incompleto').map(d => d.observation ? `${d.name} (${d.observation})` : d.name).join(', ');
     const nenv = docs.filter(d => d.status === 'Não Enviou').map(d => d.name).join(', ');
     return { comp, inc, nenv };
   };

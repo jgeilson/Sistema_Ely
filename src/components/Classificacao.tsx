@@ -113,10 +113,10 @@ export function Classificacao() {
         {/* Legend of Scoring acronyms */}
         <div className="bg-slate-100/60 px-6 py-2 border-b border-slate-200/60 flex flex-wrap gap-x-6 gap-y-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
           <span>Critérios de Pontuação:</span>
-          <span>FE = Desempenho / Estudo</span>
-          <span>RF = Renda Familiar</span>
+          <span>FE = Formação Escolar</span>
+          <span>RF = Componente Familiar</span>
           <span>IV = Vulnerabilidade Social</span>
-          <span>FA = Fator Ajuste / Social</span>
+          <span>FA = Fator de Auxílio</span>
         </div>
 
         <div className="overflow-x-auto print-visible">
@@ -157,12 +157,9 @@ export function Classificacao() {
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Deferido
                         </span>
                       ) : (
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                            <FileWarning className="w-3.5 h-3.5 text-red-500" /> Indeferido
-                          </span>
-                          <span className="text-[11px] text-red-650 max-w-xs font-medium bg-red-50/50 px-1.5 py-0.5 rounded border border-red-100">{item.reason}</span>
-                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                          <FileWarning className="w-3.5 h-3.5 text-red-500" /> Indeferido
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">

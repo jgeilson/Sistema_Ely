@@ -51,10 +51,10 @@ app.post("/api/sheets/init", async (req, res) => {
       if (!sheetTitles.includes('Estudantes')) {
          await sheets.spreadsheets.values.update({
            spreadsheetId,
-           range: 'Estudantes!A1:I1',
+           range: 'Estudantes!A1:L1',
            valueInputOption: 'USER_ENTERED',
            requestBody: {
-             values: [['id', 'name', 'city', 'idDocs', 'incomeDocs', 'incomeValue', 'scores', 'createdAt', 'edital']]
+             values: [['id', 'name', 'city', 'idDocs', 'incomeDocs', 'incomeValue', 'scores', 'createdAt', 'edital', 'createdBy', 'updatedBy', 'updatedAt']]
            }
          });
       }
@@ -98,7 +98,7 @@ app.get("/api/sheets/data", async (req, res) => {
 
     const response = await sheets.spreadsheets.values.batchGet({
       spreadsheetId,
-      ranges: ['Estudantes!A2:I1000', 'Nucleo!A2:F1000']
+      ranges: ['Estudantes!A2:L1000', 'Nucleo!A2:F1000']
     });
 
     const estudantesRows = response.data.valueRanges?.[0].values || [];
@@ -140,12 +140,15 @@ app.post("/api/sheets/student", async (req, res) => {
       student.incomeValue.toString(),
       JSON.stringify(student.scores),
       student.createdAt,
-      student.edital
+      student.edital,
+      student.createdBy || '',
+      student.updatedBy || '',
+      student.updatedAt || ''
     ]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: 'Estudantes!A:I',
+      range: 'Estudantes!A:L',
       valueInputOption: 'USER_ENTERED',
       requestBody: { values }
     });
@@ -223,7 +226,7 @@ app.put("/api/sheets/student/update", async (req, res) => {
     // Fetch existing
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Estudantes!A2:I1000'
+      range: 'Estudantes!A2:L1000'
     });
     let rows = response.data.values || [];
 
@@ -239,7 +242,10 @@ app.put("/api/sheets/student/update", async (req, res) => {
           student.incomeValue.toString(),
           JSON.stringify(student.scores),
           student.createdAt,
-          student.edital
+          student.edital,
+          student.createdBy || row[9] || '',
+          student.updatedBy || '',
+          student.updatedAt || ''
         ];
       }
       return row;
@@ -248,7 +254,7 @@ app.put("/api/sheets/student/update", async (req, res) => {
     // Clear and rewrite
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: 'Estudantes!A2:I1000'
+      range: 'Estudantes!A2:L1000'
     });
 
     if (updatedRows.length > 0) {
@@ -290,14 +296,14 @@ app.delete("/api/sheets/student/:id", async (req, res) => {
     // 1. Delete student from Estudantes
     const studentResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Estudantes!A2:I1000'
+      range: 'Estudantes!A2:L1000'
     });
     let studentRows = studentResponse.data.values || [];
     const filteredStudentRows = studentRows.filter((row: any[]) => row[0] !== studentId);
 
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: 'Estudantes!A2:I1000'
+      range: 'Estudantes!A2:L1000'
     });
 
     if (filteredStudentRows.length > 0) {
@@ -560,6 +566,95 @@ Retorne unicamente o texto corrido do parecer para ser impresso, sem introduçõ
   } catch (error: any) {
     console.error("Erro ao gerar parecer com Gemini:", error);
     res.status(500).json({ error: error.message || "Erro interno ao processar com Gemini" });
+  }
+});
+
+// API Route: Login validation via 'config' sheet
+app.post("/api/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ status: "error", message: "Usuário e senha são obrigatórios." });
+    }
+
+    const email = process.env.GOOGLE_CLIENT_EMAIL;
+    const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const spreadsheetId = process.env.SPREADSHEET_ID;
+
+    // Se as credenciais estiverem ausentes, permite usuário de fallback "admin / admin"
+    if (!email || !key || !spreadsheetId) {
+      if (username.toLowerCase() === "admin" && password === "admin") {
+        return res.json({ 
+          success: true, 
+          username: "admin", 
+          isSandbox: true,
+          message: "Autenticado com credenciais padrões em modo local de testes." 
+        });
+      }
+      return res.status(500).json({ 
+        status: "error", 
+        message: "As credenciais do Google Sheets não estão configuradas e o login padrão falhou." 
+      });
+    }
+
+    const auth = new google.auth.JWT({
+      email,
+      key,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'config!A2:B100',
+      });
+
+      const rows = response.data.values || [];
+      if (rows.length === 0) {
+        return res.status(400).json({ 
+          status: "error", 
+          message: "Nenhum usuário cadastrado na aba 'config' da planilha (ou planilha vazia)." 
+        });
+      }
+
+      const authenticatedUser = rows.find((row: any[]) => {
+        const dbUser = row[0]?.toString().trim().toLowerCase();
+        const dbPass = row[1]?.toString().trim();
+        return dbUser === username.trim().toLowerCase() && dbPass === password;
+      });
+
+      if (authenticatedUser) {
+        return res.json({ 
+          success: true, 
+          username: authenticatedUser[0] 
+        });
+      } else {
+        return res.status(401).json({ 
+          status: "error", 
+          message: "Usuário ou senha incorretos." 
+        });
+      }
+    } catch (sheetError: any) {
+      console.error("Erro ao ler aba 'config':", sheetError);
+      
+      const errMsg = sheetError.message || "";
+      if (errMsg.includes('RANGE_NOT_FOUND') || sheetError.status === 400 || errMsg.toLowerCase().includes('config')) {
+        return res.status(404).json({
+          status: "error",
+          message: "Aba 'config' não foi localizada na planilha. Certifique-se de criar uma aba com o nome 'config', onde a coluna A possui os usuários e a coluna B possui as senhas."
+        });
+      }
+      
+      return res.status(500).json({ 
+        status: "error", 
+        message: `Falha ao acessar aba 'config' da planilha: ${sheetError.message}` 
+      });
+    }
+  } catch (error: any) {
+    console.error("Erro interno de login:", error);
+    res.status(500).json({ status: "error", message: error.message || "Erro interno do servidor" });
   }
 });
 

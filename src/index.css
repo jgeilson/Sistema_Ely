@@ -3,7 +3,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 15mm;
+    margin: 12mm 10mm 12mm 10mm;
   }
   
   html, body {
@@ -14,13 +14,31 @@
     width: 100% !important;
     height: auto !important;
     overflow: visible !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
+  /* Reset layout structure in print to bypass flexbox/grid widths or hidden contents */
+  main, 
+  section, 
+  article, 
+  .min-h-screen {
+    display: block !important;
+    position: static !important;
     width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
   }
 
   .no-print {
@@ -32,12 +50,160 @@
     visibility: visible !important;
   }
 
-  .print-container {
-    box-shadow: none !important;
+  /* Table Container reset */
+  .bg-white.rounded-xl.shadow-sm.border.border-slate-200 {
     border: none !important;
-    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
     margin: 0 !important;
-    background: white !important;
+    padding: 0 !important;
+  }
+
+  /* Header structure */
+  div.border-b.border-slate-200.bg-slate-50 {
+    background-color: transparent !important;
+    padding: 0 0 8px 0 !important;
+    border-bottom: 2px solid #0f172a !important;
+    margin-bottom: 12px !important;
+    display: block !important;
+  }
+
+  .border-b.border-slate-200.bg-slate-50 h2 {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin-bottom: 4px !important;
+  }
+
+  .border-b.border-slate-200.bg-slate-50 p {
+    font-size: 10px !important;
+    color: #475569 !important;
+  }
+
+  .bg-slate-100\/60 {
+    background-color: #f1f5f9 !important;
+    padding: 6px 10px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    margin-bottom: 12px !important;
+    display: block !important;
+  }
+
+  .bg-slate-100\/60 span {
+    font-size: 8px !important;
+    color: #334155 !important;
+  }
+
+  /* Tables formatting */
+  .overflow-x-auto {
+    overflow: visible !important;
+    display: block !important;
     width: 100% !important;
+  }
+
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    margin-top: 5px !important;
+    display: table !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    display: table-row !important;
+  }
+
+  th, td {
+    padding: 5px 6px !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    vertical-align: middle !important;
+    display: table-cell !important;
+  }
+
+  th {
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    font-size: 8px !important;
+    background-color: #f8fafc !important;
+    border-bottom: 2px solid #64748b !important;
+    color: #0f172a !important;
+  }
+
+  /* Compact nested cell elements to maximize printable text space */
+  td div {
+    display: block !important;
+    text-align: inherit !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: inherit !important;
+  }
+
+  td span {
+    display: inline !important;
+  }
+
+  /* Specific column widths percentages to prevent table overflow of portrait boundary */
+  th:nth-child(1), td:nth-child(1) { width: 22% !important; text-align: left !important; } /* Estudante / Origem */
+  th:nth-child(2), td:nth-child(2) { width: 14% !important; text-align: left !important; } /* Inscrição Situação */
+  th:nth-child(3), td:nth-child(3) { width: 10% !important; text-align: center !important; } /* Família size */
+  th:nth-child(4), td:nth-child(4) { width: 14% !important; text-align: right !important; } /* Per Capita Income */
+  th:nth-child(5), td:nth-child(5) { width: 10% !important; text-align: center !important; } /* Renda Score Pts */
+  th:nth-child(6), td:nth-child(6) { width: 20% !important; text-align: center !important; } /* Scores outros totals */
+  th:nth-child(7), td:nth-child(7) { width: 10% !important; text-align: center !important; } /* Pontuação Total */
+
+  /* Ensure explicit horizontal alignments match headers */
+  td:nth-child(1) { text-align: left !important; }
+  td:nth-child(2) { text-align: left !important; }
+  td:nth-child(3) { text-align: center !important; }
+  td:nth-child(4) { text-align: right !important; }
+  td:nth-child(5) { text-align: center !important; }
+  td:nth-child(6) { text-align: center !important; }
+  td:nth-child(7) { text-align: center !important; }
+
+  /* Crisp, high-contrast text alignments */
+  .text-indigo-700 {
+    color: #1e1b4b !important;
+    font-weight: 900 !important;
+  }
+
+  /* Hide vector SVG icons in printed tables for clean, ink-saving layout */
+  table svg, 
+  th svg, 
+  td svg {
+    display: none !important;
+  }
+
+  /* Crisp high-contrast badges for printing */
+  .inline-flex {
+    border: 1px solid #94a3b8 !important;
+    background-color: #f8fafc !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+    font-size: 8px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    display: inline-block !important;
+  }
+
+  .bg-emerald-50, .text-emerald-700 {
+    background-color: #f0fdf4 !important;
+    color: #15803d !important;
+    border-color: #bbf7d0 !important;
+  }
+  .bg-red-50, .text-red-700 {
+    background-color: #fef2f2 !important;
+    color: #b91c1c !important;
+    border-color: #fecaca !important;
   }
 }

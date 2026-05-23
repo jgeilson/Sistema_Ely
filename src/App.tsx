@@ -5,7 +5,8 @@ import { CadastroEstudante } from './components/CadastroEstudante';
 import { CadastroNucleo } from './components/CadastroNucleo';
 import { Classificacao } from './components/Classificacao';
 import { Relatorio } from './components/Relatorio';
-import { Layers, GraduationCap, Users, FileBarChart, Trophy, Loader2, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { Login } from './components/Login';
+import { Layers, GraduationCap, Users, FileBarChart, Trophy, Loader2, AlertTriangle, LayoutDashboard, LogOut } from 'lucide-react';
 
 function MainWorkspace() {
   /* 
@@ -15,6 +16,7 @@ function MainWorkspace() {
    * o fluxo operacional do usuário diretamente por meio de atalhos e botões de ação rápidos.
    */
   const { loading, configRequired, retryConnection, spreadsheetId, activeTab, setActiveTab } = useAppContext();
+  const [authUser, setAuthUser] = useState<string | null>(() => localStorage.getItem('auth_user'));
 
   if (loading) {
     return (
@@ -23,6 +25,10 @@ function MainWorkspace() {
         <p className="text-slate-600 font-medium font-sans">Conectando ao Google Sheets (via API)...</p>
       </div>
     );
+  }
+
+  if (!authUser) {
+    return <Login onLoginSuccess={(username) => setAuthUser(username)} />;
   }
 
   return (
@@ -34,6 +40,11 @@ function MainWorkspace() {
                <Layers className="w-6 h-6 text-indigo-400" />
                <h1 className="font-bold text-lg tracking-tight font-sans">Análise Socioeconômica</h1>
              </div>
+             {authUser && (
+               <div className="mt-2 text-[10px] text-indigo-400 font-bold bg-indigo-950/40 px-2 py-1 rounded inline-block">
+                 Usuário: <span className="text-slate-300">{authUser}</span>
+               </div>
+             )}
            </div>
            
            <nav className="p-4 space-y-2 flex-grow">
@@ -69,10 +80,45 @@ function MainWorkspace() {
              </button>
            </nav>
 
+           {/* Sidebar Footer Logout */}
+           <div className="p-4 border-t border-slate-800 no-print">
+             <button
+               onClick={() => {
+                 localStorage.removeItem('auth_user');
+                 setAuthUser(null);
+               }}
+               className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-all font-semibold text-xs font-sans cursor-pointer"
+             >
+               <LogOut className="w-4 h-4" /> Sair do Sistema
+             </button>
+           </div>
+
         </aside>
 
         {/* Main Workspace */}
         <main className="flex-1 p-4 sm:p-6 lg:p-10 relative overflow-y-auto">
+          {/* Barra Superior Global - Sempre Visível */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 no-print animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span className="text-xs font-semibold text-slate-500 font-sans">
+                Conectado como: <strong className="text-slate-800 font-extrabold">{authUser}</strong>
+              </span>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('auth_user');
+                  setAuthUser(null);
+                }}
+                className="flex items-center gap-2 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-150 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                Sair do Sistema
+              </button>
+            </div>
+          </div>
+
            {configRequired && (
              <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 text-amber-950 no-print">
                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
