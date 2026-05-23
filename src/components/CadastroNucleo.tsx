@@ -196,7 +196,12 @@ export function CadastroNucleo() {
 
           {studentId ? (
             <>
-              {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Listas de documentos de familiares idênticas às de estudantes com marcadores visuais laterais coloridos */}
+              {/* 
+                * CONFIGURAÇÃO DE LAYOUT E PARÂMETROS DE ESTILO (GRUPO FAMILIAR):
+                * - O container externo abaixo possui duas colunas em telas grandes (lg:grid-cols-2) com espaçamento de gap-8.
+                * - Ajuste o valor de 'gap-8' para calibrar a distância horizontal.
+                * - Ambas colunas possuem limitadores de altura 'max-h-[380px] overflow-y-auto' para consistência visual em relação à ficha do aluno.
+                */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-slate-700 border-b border-slate-150 pb-2 flex items-center gap-2 uppercase tracking-widest">
@@ -206,6 +211,12 @@ export function CadastroNucleo() {
                   <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                     {idDocs.map((doc, i) => {
                       const isNotApplicable = doc.status === 'Não se Aplica';
+                      
+                      /* 
+                       * MAPEAMENTO DE CORES E BORDAS POR STATUS:
+                       * - Mantém estrita consistência de identidade visual com a ficha de estudantes para prezar pelo conforto cognitivo do assistente social do edital.
+                       * - Modifique as strings de borda ou as nuances de fundo (ex: bg-rose-50/10) se precisar alterar a paleta de cores interna.
+                       */
                       const activeBorderClasses: Record<DocStatus, string> = {
                         'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
                         'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-155',
@@ -215,12 +226,21 @@ export function CadastroNucleo() {
                       const colorClass = activeBorderClasses[doc.status] || 'bg-white';
 
                       return (
+                        /*
+                         * ESTRUTURA DO CARD DE DOCUMENTOS (MEMBRO DO NÚCLEO):
+                         * - Design de transição otimizada para respostas rápidas (duration-200) e leve microescala ativa (hover:scale-[1.002]).
+                         */
                         <div key={i} className={`flex flex-col gap-2.5 p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.002] ${colorClass}`}>
                           <div className="flex items-start justify-between">
                             <span className="font-bold text-slate-700 text-[11px] leading-tight select-none">
                               {doc.name}
                             </span>
                           </div>
+                          {/* 
+                            * GRADE DE CONTROLE DO DOCUMENTO:
+                            * - col-span-12 em mobile para empilhar confortavelmente.
+                            * - sm:col-span-5 e sm:col-span-7 regulados na proporção 5:7 para perfeito alinhamento de selects e campos de dados sem estourar.
+                            */}
                           <div className="grid grid-cols-12 gap-2 items-center">
                             <div className="col-span-12 sm:col-span-5">
                               <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
@@ -250,6 +270,11 @@ export function CadastroNucleo() {
                   <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                     {incomeDocs.map((doc, i) => {
                       const isNotApplicable = doc.status === 'Não se Aplica';
+                      
+                      /* 
+                       * MAPEAMENTO DE CORES E BORDAS NO CRITÉRIO DE RENDIMENTOS:
+                       * - Permite ajuste instantâneo e rastreável de visual sem quebrar o fluxo do estado de documentações.
+                       */
                       const activeBorderClasses: Record<DocStatus, string> = {
                         'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
                         'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-155',
@@ -265,6 +290,10 @@ export function CadastroNucleo() {
                               {doc.name}
                             </span>
                           </div>
+                          {/* 
+                            * GRADE COM 12 DIVISÕES RESPONSIVAS:
+                            * - StatusSelect em col-span-5 e input de observações em col-span-7 para garantir tamanho idêntico e sem recortes nas duas colunas principais.
+                            */}
                           <div className="grid grid-cols-12 gap-2 items-center">
                             <div className="col-span-12 sm:col-span-5">
                               <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />

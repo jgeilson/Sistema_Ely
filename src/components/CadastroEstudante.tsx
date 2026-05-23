@@ -327,7 +327,12 @@ export function CadastroEstudante() {
               </div>
             </div>
 
-            {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Listas de documentos remodeladas para se tornarem cartões adaptativos focados no status atual do anexo */}
+            {/* 
+              * CONFIGURAÇÃO DE LAYOUT E PARÂMETROS DE ESTILO (DOCUMENTOS COMPLICAÇÕES):
+              * - O container externo abaixo possui duas colunas em telas grandes (lg:grid-cols-2) com espaçamento generoso (gap-8).
+              * - Modifique 'gap-8' para aumentar ou diminuir o espaço entre a coluna de identificação e rendimentos.
+              * - Cada lista de documentos possui scroll interno vertical limitado (max-h-[380px] overflow-y-auto) para prezar pela densidade de informação.
+              */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-slate-700 border-b border-slate-150 pb-2 flex items-center gap-2 uppercase tracking-widest">
@@ -337,6 +342,15 @@ export function CadastroEstudante() {
                 <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                   {idDocs.map((doc, i) => {
                     const isNotApplicable = doc.status === 'Não se Aplica';
+                    
+                    /* 
+                     * MAPEAMENTO DE CORES E BORDAS SELECIONADAS POR STATUS:
+                     * - 'Completo' -> Borda verde (emerald) esquerda de 4px, fundo verde claro translúcido.
+                     * - 'Incompleto' -> Borda amarela (amber) esquerda de 4px, fundo amarelo translúcido.
+                     * - 'Não Enviou' -> Borda vermelha (rose) esquerda de 4px, fundo vermelho translúcido.
+                     * - 'Não se Aplica' -> Borda cinza suave esquerda, fundo fosco e texto cinza-médio desativado.
+                     * modifique as cores de fundo, texto ou classes de hover (ex: hover:bg-emerald-50/20) para ajustar o design do status específico.
+                     */
                     const activeBorderClasses: Record<DocStatus, string> = {
                       'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
                       'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-150',
@@ -346,12 +360,23 @@ export function CadastroEstudante() {
                     const colorClass = activeBorderClasses[doc.status] || 'bg-white';
 
                     return (
+                      /*
+                       * ESTRUTURA DO CARD ADAPTATIVO:
+                       * - possui efeito de transição rápido (duration-200) e leve escala no hover de desktop (md:hover:scale-[1.002]).
+                       * - Flex-col para garantir que em qualquer resolução ou orientação de celular o conteúdo se aninhe perfeitamente.
+                       */
                       <div key={i} className={`flex flex-col gap-2.5 p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.002] ${colorClass}`}>
                         <div className="flex items-start justify-between">
                           <span className="font-bold text-slate-700 text-[11px] leading-tight select-none">
                             {doc.name}
                           </span>
                         </div>
+                        {/* 
+                          * GRADE INTERNA DO CARD (GRID COLS-12):
+                          * - col-span-12: Garante que o seletor de status e o campo de observações ocupem toda a largura em telas pequenas (mobile).
+                          * - sm:col-span-5 e sm:col-span-7: Distribui dinamicamente em proporção de 5/12 para o status e 7/12 para observações em telas médias/desktop.
+                          * - Altere a relação sm:col-span-5/7 para customizar a largura mútua das entradas.
+                          */}
                         <div className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-12 sm:col-span-5">
                             <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
@@ -381,6 +406,11 @@ export function CadastroEstudante() {
                 <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                   {incomeDocs.map((doc, i) => {
                     const isNotApplicable = doc.status === 'Não se Aplica';
+                    
+                    /* 
+                     * MAPEAMENTO DE CORES E BORDAS SELECIONADAS POR STATUS (FINANCEIRO):
+                     * - Mesma estrutura adaptativa de cores compartilhada da identificação.
+                     */
                     const activeBorderClasses: Record<DocStatus, string> = {
                       'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
                       'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-150',
@@ -396,6 +426,11 @@ export function CadastroEstudante() {
                             {doc.name}
                           </span>
                         </div>
+                        {/* 
+                          * GRADE INTERNA DO CARD DE DOCUMENTAÇÃO DE RENDIMENTO:
+                          * - Grid responsiva de 12 colunas para manter harmonia impecável (evitando quebras de linhas desorganizadas).
+                          * - 'StatusSelect' ocupa col-span-5 e o input ocupa col-span-7 a partir do breakpoint 'sm'.
+                          */}
                         <div className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-12 sm:col-span-5">
                             <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
