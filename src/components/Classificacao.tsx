@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MINIMUM_WAGE } from '../constants';
-import { Download, Users, Briefcase, FileWarning, CheckCircle, Search, Filter } from 'lucide-react';
+import { Download, Users, Briefcase, FileWarning, CheckCircle, Search, Filter, Printer, ExternalLink, XCircle } from 'lucide-react';
 
 export function Classificacao() {
   const { getClassifications, getEditais } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'Todos' | 'Deferido' | 'Indeferido'>('Todos');
   const [selectedEdital, setSelectedEdital] = useState<string>('Todos');
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  
+  const isIframe = typeof window !== 'undefined' && window.self !== window.top;
   
   const editais = getEditais();
   const classifications = getClassifications();
@@ -23,6 +26,28 @@ export function Classificacao() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {isIframe && (
+        <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-indigo-950 no-print animate-fadeIn shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <Printer className="w-5 h-5 shrink-0 mt-0.5 text-indigo-600 animate-pulse" />
+            <div>
+              <h4 className="font-bold text-xs">Instrução para Impressão e PDF</h4>
+              <p className="text-[11px] text-indigo-800 mt-0.5 leading-relaxed">
+                Como você está no ambiente de visualização da plataforma, o navegador bloqueia a exportação direta/impressão em PDF dentro do painel. Clique ao lado para abrir na <strong>nova aba exclusiva</strong> e exportar perfeitamente!
+              </p>
+            </div>
+          </div>
+          <a
+            href={window.location.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm shadow-indigo-600/10 shrink-0 cursor-pointer"
+          >
+            Abrir em Nova Aba <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -71,8 +96,14 @@ export function Classificacao() {
             </div>
 
             <button 
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 hover:shadow-sm text-white font-semibold py-2 px-4 rounded-lg text-xs transition-colors cursor-pointer"
+              onClick={() => {
+                if (isIframe) {
+                  setShowPrintModal(true);
+                } else {
+                  window.print();
+                }
+              }}
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 hover:shadow-sm text-white font-semibold py-2 px-4 rounded-lg text-xs transition-colors cursor-pointer animate-pulse"
             >
               <Download className="w-3.5 h-3.5" /> Exportar / Imprimir
             </button>
@@ -163,6 +194,71 @@ export function Classificacao() {
           </table>
         </div>
       </div>
+
+      {showPrintModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn no-print">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full border border-slate-100 shadow-2xl relative animate-scaleIn">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <Printer className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-bold text-slate-800">Exportação Bloqueada pelo Iframe</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Os navegadores modernos bloqueiam recursos de salvamento ou impressão direta de arquivos PDF de dentro de páginas integradas (iframe) por segurança.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 text-xs text-slate-650 leading-relaxed space-y-2 text-left">
+              <span className="font-extrabold text-slate-700 block uppercase tracking-wider text-[10px]">Passo a Passo para Exportar/Imprimir:</span>
+              <p>
+                1. Clique abaixo para abrir o painel de classificação em uma <strong>nova aba exclusiva</strong>.
+              </p>
+              <p>
+                2. Na nova aba exclusiva, clique no botão <strong>"Exportar / Imprimir"</strong> no topo direito.
+              </p>
+              <p>
+                3. A visualização de impressão/PDF da lista de classificação A4 abrirá perfeitamente!
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href={window.location.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShowPrintModal(false)}
+                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-5 rounded-xl uppercase text-xs tracking-wider transition-all shadow-md shadow-indigo-600/10 cursor-pointer text-center"
+              >
+                Abrir em Nova Aba <ExternalLink className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPrintModal(false);
+                  try {
+                    window.print();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-5 rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Tentar Forçar
+              </button>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold p-1 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <XCircle className="w-5 h-5 animate-pulse" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

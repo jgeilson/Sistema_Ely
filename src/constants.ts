@@ -1,6 +1,6 @@
 import { Document } from './types';
 
-export const MINIMUM_WAGE = 1412.00;
+export const MINIMUM_WAGE = 1621.00;
 
 export const DEFAULT_ID_DOCS_STUDENT = [
   "RG",

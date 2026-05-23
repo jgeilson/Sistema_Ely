@@ -452,4 +452,115 @@ app.delete("/api/sheets/nucleus/:id", async (req, res) => {
   }
 });
 
+// API Route: Generate formal report opinion using Gemini 3.5 Flash
+app.post("/api/gemini/generate-parecer", async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ 
+        error: "A chave API do Gemini (GEMINI_API_KEY) não está configurada nos segredos do projeto. Por favor, adicione-a em Configurações > Segredos." 
+      });
+    }
+
+    const { student, nucleus, perCapita, familySize, totalIncome, incomeScore } = req.body;
+    if (!student) {
+      return res.status(400).json({ error: "Dados do estudante são necessários." });
+    }
+
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({
+      apiKey: apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+
+    const idDocsComp = student.idDocs.filter((d: any) => d.status === 'Completo').map((d: any) => d.name).join(', ');
+    const idDocsInc = student.idDocs.filter((d: any) => d.status === 'Incompleto').map((d: any) => `${d.name} (${d.observation || 'pendente'})`).join(', ');
+    const idDocsNenv = student.idDocs.filter((d: any) => d.status === 'Não Enviou').map((d: any) => d.name).join(', ');
+
+    const incDocsComp = student.incomeDocs.filter((d: any) => d.status === 'Completo').map((d: any) => d.name).join(', ');
+    const incDocsInc = student.incomeDocs.filter((d: any) => d.status === 'Incompleto').map((d: any) => `${d.name} (${d.observation || 'pendente'})`).join(', ');
+    const incDocsNenv = student.incomeDocs.filter((d: any) => d.status === 'Não Enviou').map((d: any) => d.name).join(', ');
+
+    const idDocsStatus = [
+      idDocsComp ? `Validados: [${idDocsComp}]` : '',
+      idDocsInc ? `Incompletos/Pendentes: [${idDocsInc}]` : '',
+      idDocsNenv ? `Não Enviados: [${idDocsNenv}]` : ''
+    ].filter(Boolean).join('; ') || 'Sem documentos cadastrados';
+
+    const incomeDocsStatus = [
+      incDocsComp ? `Validados: [${incDocsComp}]` : '',
+      incDocsInc ? `Incompletos/Pendentes: [${incDocsInc}]` : '',
+      incDocsNenv ? `Não Enviados: [${incDocsNenv}]` : ''
+    ].filter(Boolean).join('; ') || 'Sem comprovações cadastradas';
+
+    const familyDocsStatus = nucleus && nucleus.length > 0
+      ? nucleus.map((m: any, i: number) => {
+          const mIdComp = m.idDocs.filter((d: any) => d.status === 'Completo').map((d: any) => d.name).join(', ');
+          const mIdInc = m.idDocs.filter((d: any) => d.status === 'Incompleto').map((d: any) => `${d.name} (${d.observation || 'pendente'})`).join(', ');
+          const mIncComp = m.incomeDocs.filter((d: any) => d.status === 'Completo').map((d: any) => d.name).join(', ');
+          const mIncInc = m.incomeDocs.filter((d: any) => d.status === 'Incompleto').map((d: any) => `${d.name} (${d.observation || 'pendente'})`).join(', ');
+          
+          return `- Membro #${i + 1} (${m.name}): Identificação: [${mIdComp || 'nenhum completo'}${mIdInc ? ' / Pendentes: ' + mIdInc : ''}]; Renda: [${mIncComp || 'nenhum completo'}${mIncInc ? ' / Pendentes: ' + mIncInc : ''}] (Renda: R$ ${m.incomeValue})`;
+        }).join('\n')
+      : 'Não se aplica (Domicílio unipessoal)';
+
+    const minWageHalf = 1412 / 2;
+    const perCapitaClassification = perCapita <= minWageHalf 
+      ? "Extrema Pobreza (até 1/2 salário mínimo per capita)" 
+      : perCapita <= 1412 
+        ? "Baixa Renda (entre 1/2 e 1 salário mínimo per capita)" 
+        : "Acima de 1 salário mínimo per capita";
+
+    const prompt = `Você é uma inteligência artificial voltada para o serviço social que auxilia assistentes sociais na redação de pareceres de avaliação socioeconômica para programas de assistência estudantil.
+Sua tarefa é redigir um parecer social sintético, formal, técnico e objetivo para o estudante com base nos dados reais descritos abaixo.
+
+REGRAS CRÍTICAS:
+- Escreva em português do Brasil (pt-BR).
+- Escreva estritamente na terceira pessoa de forma direta e corrida (nunca responda como chat, e não se dirija ao usuário).
+- Use tom estritamente técnico e profissional, típico de pareceres periciais de assistentes sociais do CRESS.
+- Limite o texto a no máximo 100-110 palavras (um único parágrafo conciso ou dois extremamente curtos), pois o espaço impresso de anotações no papel é limitado.
+- Se houver pendências de documentos (status 'Incompleto' ou 'Não Enviou'), cite resumidamente que foi indeferido, sendo necessário recorrer (entrar com recurso) e promover regularização documental.
+- Se a renda per capita for muito baixa, reforce os indicadores de extrema vulnerabilidade para fundamentar o parecer.
+- Não crie dados fictícios, use apenas o contexto fornecido. Não faça menção a nomes de variáveis ou placeholders técnicos.
+
+DADOS DA ANÁLISE SOCIOECONÔMICA DO ESTUDANTE:
+- Nome do Estudante / Candidato: ${student.name}
+- Processo Seletivo / Edital: ${student.edital || 'Não especificado'}
+- Município: ${student.city || 'Não informado'}
+- Membros no Núcleo Familiar (incluindo o estudante): ${familySize}
+- Renda Mensal Total do Grupo: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Renda Per Capita Mensal: R$ ${perCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${perCapitaClassification})
+- Índice de Vulnerabilidade Social e Clínica (IV): ${student.scores?.IV || 0} pontos
+- Índice Familiar e Educacional (FE): ${student.scores?.FE || 0} pontos
+- Índice de Renda Familiar (RF): ${student.scores?.RF || 0} pontos
+- Índice de Fatos Agravantes Gerais (FA): ${student.scores?.FA || 0} pontos
+- Pontuação Básica de Renda Adicional do Sistema: ${incomeScore} pontos
+
+SITUAÇÃO DOCUMENTAL DO ESTUDANTE:
+- Documentos de Identidade: ${idDocsStatus}
+- Documentos de Comprovação de Renda: ${incomeDocsStatus}
+
+SITUAÇÃO DOCUMENTAL DO NÚCLEO FAMILIAR:
+${familyDocsStatus}
+
+Retorne unicamente o texto corrido do parecer para ser impresso, sem introduções do tipo "Aqui está o parecer:", sem blocos de formatação markdown, ou qualquer quebra-cabeça explicativo adicional.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+    });
+
+    const parecer = response.text?.trim() || "";
+
+    res.json({ parecer });
+  } catch (error: any) {
+    console.error("Erro ao gerar parecer com Gemini:", error);
+    res.status(500).json({ error: error.message || "Erro interno ao processar com Gemini" });
+  }
+});
+
 export default app;
