@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Ba
 import { Users, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
 import { MINIMUM_WAGE } from '../constants';
 
-const COLORS = ['#22c55e', '#ef4444']; // verde e vermelho
+const COLORS = ['#10b981', '#ef4444']; // emerald green and red-500
 
 export function Dashboard() {
   const { getClassifications, getEditais } = useAppContext();
@@ -39,32 +39,34 @@ export function Dashboard() {
   }, [classifications]);
 
   const pieData = [
-    { name: 'Deferidos', value: stats.deferidos },
-    { name: 'Indeferidos', value: stats.indeferidos },
+    { name: 'Deferidas (Aprovadas)', value: stats.deferidos },
+    { name: 'Indeferidas (Pendências/Não atende)', value: stats.indeferidos },
   ];
 
-  // Agrupamento por bairro/cidade (exemplo simples usando a city que vem do student)
   const cityData = useMemo(() => {
     const counts: Record<string, number> = {};
     classifications.forEach(c => {
-      let city = c.student.city || 'Não informada';
+      let city = c.student.city || 'Não especificado';
       counts[city] = (counts[city] || 0) + 1;
     });
     return Object.keys(counts).map(k => ({ name: k, amount: counts[k] }));
   }, [classifications]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-slate-800">Visão Geral</h2>
-        <div className="bg-white border border-slate-200 rounded-lg flex items-center px-3 py-2 shadow-sm">
-          <span className="text-sm font-medium text-slate-500 mr-2">Edital:</span>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Painel de Controle</h2>
+          <p className="text-sm text-slate-500">Estatísticas dos editais analisados no sistema.</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl flex items-center px-4 py-2 shadow-sm shrink-0">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-2.5">Filtrar Edital:</span>
           <select 
             value={selectedEdital}
             onChange={(e) => setSelectedEdital(e.target.value)}
-            className="bg-transparent border-none text-sm text-slate-800 focus:outline-none focus:ring-0 font-medium"
+            className="bg-transparent border-none text-sm text-slate-800 focus:outline-none focus:ring-0 font-semibold cursor-pointer"
           >
-            <option value="Todos">Todos os Editais</option>
+            <option value="Todos">Exibir Todos os Editais</option>
             {editais.map(e => (
               <option key={e} value={e}>{e}</option>
             ))}
@@ -72,52 +74,54 @@ export function Dashboard() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-blue-100 p-3 rounded-lg text-blue-600">
+          <div className="bg-blue-50 p-3 rounded-xl text-blue-600 border border-blue-100">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Total Avaliados</p>
-            <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-450">Estudantes Avaliados</p>
+            <p className="text-2xl font-bold text-slate-800 mt-0.5">{stats.total}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-green-100 p-3 rounded-lg text-green-600">
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600 border border-emerald-100">
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Deferidos</p>
-            <p className="text-2xl font-bold text-slate-800">{stats.deferidos}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-455">Estudantes Deferidos</p>
+            <p className="text-2xl font-bold text-slate-800 mt-0.5">{stats.deferidos}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-red-100 p-3 rounded-lg text-red-600">
+          <div className="bg-rose-50 p-3 rounded-xl text-rose-650 border border-rose-100">
             <XCircle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Indeferidos</p>
-            <p className="text-2xl font-bold text-slate-800">{stats.indeferidos}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-455">Estudantes Indeferidos</p>
+            <p className="text-2xl font-bold text-slate-800 mt-0.5">{stats.indeferidos}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-purple-100 p-3 rounded-lg text-purple-600">
+          <div className="bg-violet-50 p-3 rounded-xl text-violet-600 border border-violet-100">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Média Per Capita</p>
-            <p className="text-2xl font-bold text-slate-800">R$ {stats.avgPerCapita.toFixed(2)}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-455">Renda Média Per Capita</p>
+            <p className="text-2xl font-bold text-slate-800 mt-0.5">
+              R$ {stats.avgPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
       </div>
 
-      {stats.total > 0 && (
+      {stats.total > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="font-semibold text-slate-800 mb-6">Proporção de Aprovação</h3>
+            <h3 className="font-bold text-slate-805 text-md mb-6 uppercase tracking-wider text-xs text-slate-450 border-b pb-3">Situação das Análises (Aprovação)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -134,27 +138,31 @@ export function Dashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: number) => [val, 'Estudantes']} />
-                  <Legend />
+                  <Tooltip formatter={(val: number) => [`${val} estudante(s)`, 'Quantidade']} />
+                  <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="font-semibold text-slate-800 mb-6">Distribuição por Cidade/Bairro</h3>
+            <h3 className="font-bold text-slate-805 text-md mb-6 uppercase tracking-wider text-xs text-slate-450 border-b pb-3">Distribuição Demográfica (Município/Bairro)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cityData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                  <Tooltip wrapperStyle={{ outline: 'none' }} cursor={{fill: '#f1f5f9'}} />
-                  <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} name="Avaliados" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} />
+                  <Tooltip wrapperStyle={{ outline: 'none' }} cursor={{fill: '#f8fafc'}} />
+                  <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} name="Inscrições" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-12 text-center text-slate-500">
+          Nenhum dado consolidado com os filtros selecionados.
         </div>
       )}
     </div>

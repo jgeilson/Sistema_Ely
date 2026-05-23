@@ -35,7 +35,7 @@ export function CadastroEstudante() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !city || !edital) {
-      alert("Edital, nome e cidade são obrigatórios.");
+      alert("Selecione o Edital correspondente, e insira o nome completo e município do estudante.");
       return;
     }
 
@@ -58,10 +58,10 @@ export function CadastroEstudante() {
 
     if (editingStudentId) {
       await updateStudent(studentData);
-      setSuccess('Estudante atualizado com sucesso!');
+      setSuccess('Ficha do estudante atualizada com sucesso!');
     } else {
       await addStudent(studentData);
-      setSuccess('Estudante cadastrado com sucesso!');
+      setSuccess('Ficha do estudante cadastrada com sucesso!');
     }
     
     resetForm();
@@ -89,7 +89,7 @@ export function CadastroEstudante() {
   const confirmDelete = async (id: string) => {
     await deleteStudent(id);
     resetForm();
-    setSuccess('Estudante excluído com sucesso!');
+    setSuccess('Inscrição do estudante e seu histórico excluídos com sucesso!');
     setTimeout(() => setSuccess(''), 3000);
   };
 
@@ -109,7 +109,7 @@ export function CadastroEstudante() {
     <select 
       value={val} 
       onChange={(e) => onChange(e.target.value)}
-      className={`border rounded p-1 text-sm ${val === 'Completo' ? 'bg-green-50 text-green-700 border-green-200' : val === 'Incompleto' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : val === 'Não Enviou' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}
+      className={`border rounded p-1 text-xs font-semibold ${val === 'Completo' ? 'bg-green-50 text-green-700 border-green-200' : val === 'Incompleto' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : val === 'Não Enviou' ? 'bg-red-50 text-red-705 border-red-200' : 'bg-gray-50 text-gray-450 border-gray-200'}`}
     >
       <option value="Completo">Completo</option>
       <option value="Incompleto">Incompleto</option>
@@ -124,12 +124,12 @@ export function CadastroEstudante() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <Search className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+              <Search className="w-5 h-5 text-blue-500 animate-pulse" />
               Gestão de Estudantes
             </h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Busque um estudante cadastrado para editar/excluir ou inicie um novo cadastro.
+            <p className="text-xs text-slate-500 mt-1">
+              Busque um estudante registrado para atualizar/consultar seu cadastro, ou crie uma nova ficha.
             </p>
           </div>
           <button 
@@ -138,19 +138,19 @@ export function CadastroEstudante() {
               resetForm();
               setIsNewRegistration(true);
             }}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer ${
               isNewRegistration && !editingStudentId
                 ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
-                : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow'
+                : 'bg-indigo-600 hover:bg-indigo-750 hover:shadow text-white'
             }`}
           >
-            + Cadastrar Novo Estudante
+            Criar Novo Cadastro
           </button>
         </div>
 
         <div className="max-w-md">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-            Pesquisar Estudante Existente (Autocomplete)
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+            Pesquisar Estudante Registrado
           </label>
           <StudentSelect
             students={state.students}
@@ -165,15 +165,15 @@ export function CadastroEstudante() {
                 resetForm();
               }
             }}
-            placeholder="Digite o nome ou cidade do estudante..."
+            placeholder="Digite o nome do estudante..."
           />
         </div>
       </div>
 
       {success && (
         <div className="mx-0 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
-          <Check className="w-5 h-5" />
-          <span className="font-medium text-sm">{success}</span>
+          <Check className="w-5 h-5 text-green-500" />
+          <span className="font-semibold text-sm">{success}</span>
         </div>
       )}
 
@@ -182,20 +182,20 @@ export function CadastroEstudante() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-scaleIn">
           <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-2.5">
-              <FilePenLine className="w-5 h-5 text-slate-500" />
+              <FilePenLine className="w-5 h-5 text-indigo-500" />
               <div>
-                <h2 className="text-lg font-medium text-slate-800">
-                  {editingStudentId ? `Editar Cadastro: ${name}` : 'Novo Cadastro de Estudante'}
+                <h2 className="text-md font-bold text-slate-800">
+                  {editingStudentId ? `Ficha Cadastral: ${name}` : 'Novo Cadastro de Estudante'}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {editingStudentId ? 'Altere as informações cadastrais e salve.' : 'Verifique os dados cadastrais antes de salvar.'}
+                  {editingStudentId ? 'Altere as informações abaixo e clique em Salvar.' : 'Anexos enviados pelo estudante.'}
                 </p>
               </div>
             </div>
             <button 
               type="button"
               onClick={resetForm}
-              className="p-1 px-3 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-800 font-medium text-xs rounded-lg border border-slate-200 transition-colors shadow-sm cursor-pointer"
+              className="p-1 px-3 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-800 font-bold text-xs rounded-lg border border-slate-200 shadow-sm transition-colors cursor-pointer"
             >
               Fechar Formulário
             </button>
@@ -204,7 +204,7 @@ export function CadastroEstudante() {
           <form onSubmit={handleSave} className="p-6 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Edital / Processo Seletivo</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Número do Edital</label>
                 <EditalSelect 
                   editais={editais} 
                   value={edital} 
@@ -212,26 +212,49 @@ export function CadastroEstudante() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nome do Estudante</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" required />
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nome do Estudante</label>
+                <input 
+                  type="text" 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  placeholder=""
+                  className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-medium" 
+                  required 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
-                <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" required />
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Município</label>
+                <input 
+                  type="text" 
+                  value={city} 
+                  onChange={e => setCity(e.target.value)} 
+                  placeholder=""
+                  className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-medium" 
+                  required 
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-slate-800 border-b pb-2 flex items-center gap-2"><Info className="w-4 h-4" /> Documentação de Identificação</h3>
+                <h3 className="text-xs font-bold text-slate-700 border-b pb-2 flex items-center gap-2 uppercase tracking-wide">
+                  <Info className="w-4 h-4 text-blue-500" /> Comprovações de Identificação
+                </h3>
                 {idDocs.map((doc, i) => {
                   const isNotApplicable = doc.status === 'Não se Aplica';
                   return (
                     <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm p-2 hover:bg-slate-50 rounded-lg">
-                      <span className="font-medium text-slate-600 w-48">{doc.name}</span>
+                      <span className="font-medium text-slate-650 text-xs w-48">{doc.name}</span>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
-                        <input type="text" placeholder="Qual? / Obs..." value={doc.observation || ''} onChange={e => handleDocChange('id', i, 'observation', e.target.value)} disabled={isNotApplicable} className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Obs / Qual?..." 
+                          value={doc.observation || ''} 
+                          onChange={e => handleDocChange('id', i, 'observation', e.target.value)} 
+                          disabled={isNotApplicable} 
+                          className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" 
+                        />
                       </div>
                     </div>
                   );
@@ -239,15 +262,24 @@ export function CadastroEstudante() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-slate-800 border-b pb-2 flex items-center gap-2"><Info className="w-4 h-4" /> Documentação de Renda</h3>
+                <h3 className="text-xs font-bold text-slate-700 border-b pb-2 flex items-center gap-2 uppercase tracking-wide">
+                  <Info className="w-4 h-4 text-emerald-500" /> Comprovações de Rendimentos
+                </h3>
                 {incomeDocs.map((doc, i) => {
                   const isNotApplicable = doc.status === 'Não se Aplica';
                   return (
                     <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm p-2 hover:bg-slate-50 rounded-lg">
-                      <span className="font-medium text-slate-600 w-48">{doc.name}</span>
+                      <span className="font-medium text-slate-650 text-xs w-48">{doc.name}</span>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
-                        <input type="text" placeholder="Qual? / Obs..." value={doc.observation || ''} onChange={e => handleDocChange('income', i, 'observation', e.target.value)} disabled={isNotApplicable} className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Obs / Qual?..." 
+                          value={doc.observation || ''} 
+                          onChange={e => handleDocChange('income', i, 'observation', e.target.value)} 
+                          disabled={isNotApplicable} 
+                          className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" 
+                        />
                       </div>
                     </div>
                   );
@@ -256,29 +288,32 @@ export function CadastroEstudante() {
             </div>
 
             <div className="border-t border-slate-200 pt-6">
-              <h3 className="text-md font-medium text-slate-800 mb-4">Informações de Renda e Pontuação</h3>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">Rendimento e Critérios de Pontuação do Edital</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Renda Bruta (R$)</label>
-                   <input type="number" step="0.01" value={incomeValue} onChange={e => setIncomeValue(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                   <label className="block text-[11px] font-bold text-slate-600 mb-1 leading-normal">Renda Mensal Individual (R$)</label>
+                   <input type="number" step="0.01" value={incomeValue} onChange={e => setIncomeValue(e.target.value)} placeholder="0.00" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Pont. FE</label>
-                   <input type="number" value={scores.FE} onChange={e => setScores({...scores, FE: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Força de Estudo / Desempenho">Pontuação extra: FE</label>
+                   <input type="number" value={scores.FE} onChange={e => setScores({...scores, FE: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Pont. RF</label>
-                   <input type="number" value={scores.RF} onChange={e => setScores({...scores, RF: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Renda Familiar">Pontuação extra: RF</label>
+                   <input type="number" value={scores.RF} onChange={e => setScores({...scores, RF: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Pont. IV</label>
-                   <input type="number" value={scores.IV} onChange={e => setScores({...scores, IV: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Índice de Vulnerabilidade">Pontuação extra: IV</label>
+                   <input type="number" value={scores.IV} onChange={e => setScores({...scores, IV: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Pont. FA</label>
-                   <input type="number" value={scores.FA} onChange={e => setScores({...scores, FA: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Fator de Ajuste">Pontuação extra: FA</label>
+                   <input type="number" value={scores.FA} onChange={e => setScores({...scores, FA: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
                 </div>
               </div>
+              <p className="text-[10px] text-slate-450 mt-2">
+                *Os campos de pontuação são atribuídos conforme análise, somando-se ao índice de renda.
+              </p>
             </div>
 
             <div className="flex justify-between items-center gap-3 pt-6 border-t border-slate-200">
@@ -286,19 +321,19 @@ export function CadastroEstudante() {
                  {editingStudentId && (
                    <>
                      {deletingStudentId === editingStudentId ? (
-                       <div className="flex items-center gap-2 bg-red-50 text-red-700 py-2 px-3.5 rounded-lg border border-red-200 text-sm font-semibold w-fit animate-scaleIn">
-                         <span>Excluir permanentemente este estudante e sua família?</span>
+                       <div className="flex items-center gap-2 bg-red-50 text-red-700 py-2 px-3.5 rounded-lg border border-red-200 text-xs font-semibold w-fit animate-scaleIn">
+                         <span>Excluir permanentemente este estudante e todos os seus familiares vinculados?</span>
                          <button 
                            type="button" 
                            onClick={() => confirmDelete(editingStudentId)}
                            className="p-1 px-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
                          >
-                           Sim, Excluir
+                           Sim, Excluir Tudo
                          </button>
                          <button 
                            type="button" 
                            onClick={() => setDeletingStudentId(null)}
-                           className="p-1 px-2.5 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
+                           className="p-1 px-2.5 bg-white text-slate-705 text-xs font-semibold hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
                          >
                            Cancelar
                          </button>
@@ -307,10 +342,10 @@ export function CadastroEstudante() {
                        <button 
                          type="button" 
                          onClick={() => setDeletingStudentId(editingStudentId)}
-                         className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-150 font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-sm"
+                         className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-150 font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs"
                        >
                          <Trash2 className="w-4 h-4" />
-                         Excluir Estudante
+                         Excluir Estudante e Histórico
                        </button>
                      )}
                    </>
@@ -321,26 +356,26 @@ export function CadastroEstudante() {
                  <button 
                    type="button" 
                    onClick={resetForm}
-                   className="cursor-pointer border border-slate-300 text-slate-700 font-medium py-2 px-6 rounded-lg hover:bg-slate-50 transition-colors text-sm"
+                   className="cursor-pointer border border-slate-300 text-slate-705 font-semibold py-2 px-6 rounded-lg hover:bg-slate-50 transition-colors text-xs"
                  >
                    Cancelar
                  </button>
-                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors cursor-pointer text-sm font-semibold shadow-sm">
-                   {editingStudentId ? 'Salvar Edição' : 'Salvar Cadastro'}
+                 <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer text-xs shadow-sm">
+                   {editingStudentId ? 'Salvar Alterações' : 'Confirmar e Cadastrar'}
                  </button>
                </div>
             </div>
           </form>
         </div>
       ) : (
-        <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-12 text-center space-y-4 animate-fadeIn">
-          <div className="inline-flex p-3 bg-white rounded-full shadow-sm border border-slate-100 text-slate-400">
+        <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-250 p-12 text-center space-y-4 animate-fadeIn">
+          <div className="inline-flex p-3 bg-white rounded-full shadow-sm border border-slate-100 text-slate-450 hover:shadow transition-shadow">
             <Search className="w-8 h-8 text-slate-350" />
           </div>
           <div className="max-w-md mx-auto space-y-2">
-            <h3 className="text-md font-semibold text-slate-700">Nenhum estudante selecionado</h3>
-            <p className="text-sm text-slate-500">
-              Digite o nome ou cidade no campo acima para carregar o cadastro, ou aperte no botão <strong>+ Cadastrar Novo Estudante</strong> para iniciar do zero.
+            <h3 className="text-sm font-bold text-slate-700">Abra ou encontre uma ficha cadastral</h3>
+            <p className="text-xs text-slate-500 leading-normal">
+              Digite o nome ou cidade do estudante no campo correspondente para carregar seu formulário de avaliação completo, ou clique em <strong>Criar Novo Cadastro de Estudante</strong>. 
             </p>
           </div>
         </div>

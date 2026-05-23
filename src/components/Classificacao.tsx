@@ -10,7 +10,6 @@ export function Classificacao() {
   const [selectedEdital, setSelectedEdital] = useState<string>('Todos');
   
   const editais = getEditais();
-  
   const classifications = getClassifications();
 
   const filteredClassifications = useMemo(() => {
@@ -23,12 +22,14 @@ export function Classificacao() {
   }, [classifications, searchTerm, filterStatus, selectedEdital]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-medium text-slate-800">Classificação Final</h2>
-            <p className="text-sm text-slate-500 mt-1">Lista ordenada por pontuação (Salário mínimo ref: R$ {MINIMUM_WAGE.toFixed(2)}).</p>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Lista de Classificação e Resultados</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Lista ordenada decrescentemente por pontuação socioeconômica acumulada (Salário Mínimo Ref: R$ {MINIMUM_WAGE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).
+            </p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3 no-print">
@@ -36,34 +37,34 @@ export function Classificacao() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Buscar por nome..."
+                placeholder="Buscar estudante..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-505 focus:border-indigo-500 bg-white placeholder-slate-400 text-slate-700 w-full sm:w-56 text-xs font-medium"
               />
             </div>
             
-            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg shadow-sm">
                <select
                  value={selectedEdital}
                  onChange={(e) => setSelectedEdital(e.target.value)}
-                 className="px-3 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-medium"
+                 className="px-3 py-2 text-xs bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-semibold cursor-pointer"
                >
                  <option value="Todos">Todos os Editais</option>
                  {editais.map(e => <option key={e} value={e}>{e}</option>)}
                </select>
             </div>
 
-            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
-               <div className="pl-3 pr-2 py-2 bg-slate-50 border-r border-slate-200 text-slate-500 hidden sm:block">
-                 <Filter className="w-4 h-4" />
+            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg shadow-sm">
+               <div className="pl-3 pr-1 py-2 text-slate-400 hidden sm:block">
+                 <Filter className="w-3.5 h-3.5" />
                </div>
                <select
                  value={filterStatus}
                  onChange={(e) => setFilterStatus(e.target.value as any)}
-                 className="px-3 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700"
+                 className="px-3 py-2 text-xs bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-medium cursor-pointer"
                >
-                 <option value="Todos">Todos</option>
+                 <option value="Todos">Filtrar Situação (Todos)</option>
                  <option value="Deferido">Apenas Deferidos</option>
                  <option value="Indeferido">Apenas Indeferidos</option>
                </select>
@@ -71,74 +72,93 @@ export function Classificacao() {
 
             <button 
               onClick={() => window.print()}
-              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 hover:shadow-sm text-white font-semibold py-2 px-4 rounded-lg text-xs transition-colors cursor-pointer"
             >
-              <Download className="w-4 h-4" /> Imprimir
+              <Download className="w-3.5 h-3.5" /> Exportar / Imprimir
             </button>
           </div>
         </div>
 
+        {/* Legend of Scoring acronyms */}
+        <div className="bg-slate-100/60 px-6 py-2 border-b border-slate-200/60 flex flex-wrap gap-x-6 gap-y-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+          <span>Critérios de Pontuação:</span>
+          <span>FE = Desempenho / Estudo</span>
+          <span>RF = Renda Familiar</span>
+          <span>IV = Vulnerabilidade Social</span>
+          <span>FA = Fator Ajuste / Social</span>
+        </div>
+
         <div className="overflow-x-auto print-visible">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
+          <table className="w-full text-left text-sm text-slate-650">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 text-xs uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-3 font-medium">Estudante</th>
-                <th className="px-6 py-3 font-medium">Status / Motivo</th>
-                <th className="px-6 py-3 font-medium text-center">Núcleo</th>
-                <th className="px-6 py-3 font-medium text-right">Renda Per Capita</th>
-                <th className="px-6 py-3 font-medium text-center">Pontuação Renda</th>
-                <th className="px-6 py-3 font-medium text-center">Pontuação Outros</th>
-                <th className="px-6 py-3 font-medium text-center text-lg font-bold text-slate-900 border-l border-slate-200">Total</th>
+                <th className="px-6 py-3.5 font-bold">Estudante / Origem</th>
+                <th className="px-6 py-3.5 font-bold">Situação da Inscrição</th>
+                <th className="px-6 py-3.5 font-bold text-center">Grupo Familiar</th>
+                <th className="px-6 py-3.5 font-bold text-right">Renda Per Capita</th>
+                <th className="px-6 py-3.5 font-bold text-center">Score Renda (Pts)</th>
+                <th className="px-6 py-3.5 font-bold text-center border-r border-slate-150">Scores Outros (FE+RF+IV+FA)</th>
+                <th className="px-6 py-3.5 font-bold text-center text-slate-900 bg-indigo-50/50">Pontuação Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredClassifications.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
-                    Nenhum estudante encontrado com estes filtros.
-                  </td>
+                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium text-sm">
+                     Nenhum registro de estudante encontrado para os parâmetros selecionados.
+                   </td>
                 </tr>
-              ) : filteredClassifications.map((item, idx) => (
-                <tr key={item.student.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900">{item.student.name}</div>
-                    <div className="text-xs text-slate-500">{item.student.city}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {item.status === 'Deferido' ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="w-3.5 h-3.5" /> Deferido
-                      </span>
-                    ) : (
-                      <div className="flex flex-col gap-1 items-start">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <FileWarning className="w-3.5 h-3.5" /> Indeferido
-                        </span>
-                        <span className="text-xs text-red-600 max-w-xs">{item.reason}</span>
+              ) : filteredClassifications.map((item, idx) => {
+                const rawOtherPoints = item.student.scores.FE + item.student.scores.RF + item.student.scores.IV + item.student.scores.FA;
+                return (
+                  <tr key={item.student.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800">{item.student.name}</div>
+                      <div className="text-xs text-slate-450 mt-0.5 flex items-center gap-1.5">
+                        <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">{item.student.edital}</span>
+                        <span>•</span>
+                        <span>{item.student.city}</span>
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Users className="w-4 h-4 text-slate-400" />
-                      {item.familySize}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Briefcase className="w-4 h-4 text-slate-400" />
-                      R$ {item.perCapitaIncome.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">{item.incomeScore}</td>
-                  <td className="px-6 py-4 text-center">
-                    {item.student.scores.FE + item.student.scores.RF + item.student.scores.IV + item.student.scores.FA}
-                  </td>
-                  <td className="px-6 py-4 text-center font-bold text-lg text-blue-700 bg-blue-50/30 border-l border-slate-200">
-                     {item.status === 'Deferido' ? item.totalScore : '-'}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      {item.status === 'Deferido' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Deferido
+                        </span>
+                      ) : (
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                            <FileWarning className="w-3.5 h-3.5 text-red-500" /> Indeferido
+                          </span>
+                          <span className="text-[11px] text-red-650 max-w-xs font-medium bg-red-50/50 px-1.5 py-0.5 rounded border border-red-100">{item.reason}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-slate-700 font-semibold">
+                        <Users className="w-4 h-4 text-slate-400 shrink-0" />
+                        {item.familySize} <span className="text-xs text-slate-400 font-normal">pes.</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-semibold text-slate-700">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />
+                        R$ {item.perCapitaIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-slate-700">{item.incomeScore}</td>
+                    <td className="px-6 py-4 text-center text-xs text-slate-600 border-r border-slate-150">
+                      <div className="font-semibold">{rawOtherPoints}</div>
+                      <div className="text-[10px] text-slate-400 font-normal mt-0.5">
+                        FE:{item.student.scores.FE} • RF:{item.student.scores.RF} • IV:{item.student.scores.IV} • FA:{item.student.scores.FA}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center font-black text-base text-indigo-700 bg-indigo-50/20">
+                       {item.status === 'Deferido' ? `${item.totalScore} Pts` : '-'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
