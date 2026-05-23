@@ -320,7 +320,7 @@ export function CadastroEstudante() {
                   type="text" 
                   value={city} 
                   onChange={e => setCity(e.target.value)} 
-                  placeholder="Ex: Rio de Janeiro"
+                  placeholder="Ex: João Pessoa/PB"
                   className="w-full border-slate-200 hover:border-slate-350 rounded-xl shadow-sm border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 font-semibold transition-all" 
                   required 
                 />
@@ -346,18 +346,26 @@ export function CadastroEstudante() {
                     const colorClass = activeBorderClasses[doc.status] || 'bg-white';
 
                     return (
-                      <div key={i} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.005] ${colorClass}`}>
-                        <span className="font-bold text-slate-700 text-[11px] sm:max-w-[180px] leading-tight shrink-0">{doc.name}</span>
-                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
-                          <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
-                          <input 
-                            type="text" 
-                            placeholder="Adicionar nota..." 
-                            value={doc.observation || ''} 
-                            onChange={e => handleDocChange('id', i, 'observation', e.target.value)} 
-                            disabled={isNotApplicable} 
-                            className="border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 w-32 md:w-40 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-105 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-medium" 
-                          />
+                      <div key={i} className={`flex flex-col gap-2.5 p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.002] ${colorClass}`}>
+                        <div className="flex items-start justify-between">
+                          <span className="font-bold text-slate-700 text-[11px] leading-tight select-none">
+                            {doc.name}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-12 sm:col-span-5">
+                            <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
+                          </div>
+                          <div className="col-span-12 sm:col-span-7">
+                            <input 
+                              type="text" 
+                              placeholder="Adicionar nota..." 
+                              value={doc.observation || ''} 
+                              onChange={e => handleDocChange('id', i, 'observation', e.target.value)} 
+                              disabled={isNotApplicable} 
+                              className="w-full border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-semibold text-slate-700" 
+                            />
+                          </div>
                         </div>
                       </div>
                     );
@@ -382,18 +390,26 @@ export function CadastroEstudante() {
                     const colorClass = activeBorderClasses[doc.status] || 'bg-white';
 
                     return (
-                      <div key={i} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.005] ${colorClass}`}>
-                        <span className="font-bold text-slate-700 text-[11px] sm:max-w-[180px] leading-tight shrink-0">{doc.name}</span>
-                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
-                          <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
-                          <input 
-                            type="text" 
-                            placeholder="Adicionar nota..." 
-                            value={doc.observation || ''} 
-                            onChange={e => handleDocChange('income', i, 'observation', e.target.value)} 
-                            disabled={isNotApplicable} 
-                            className="border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 w-32 md:w-40 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-105 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-medium" 
-                          />
+                      <div key={i} className={`flex flex-col gap-2.5 p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.002] ${colorClass}`}>
+                        <div className="flex items-start justify-between">
+                          <span className="font-bold text-slate-700 text-[11px] leading-tight select-none">
+                            {doc.name}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-12 sm:col-span-5">
+                            <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
+                          </div>
+                          <div className="col-span-12 sm:col-span-7">
+                            <input 
+                              type="text" 
+                              placeholder="Adicionar nota..." 
+                              value={doc.observation || ''} 
+                              onChange={e => handleDocChange('income', i, 'observation', e.target.value)} 
+                              disabled={isNotApplicable} 
+                              className="w-full border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-semibold text-slate-700" 
+                            />
+                          </div>
                         </div>
                       </div>
                     );
