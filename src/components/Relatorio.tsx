@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Printer, Calendar, FileText } from 'lucide-react';
 import { MINIMUM_WAGE } from '../constants';
+import { StudentSelect } from './StudentSelect';
 
 export function Relatorio() {
   const { state } = useAppContext();
@@ -31,12 +32,14 @@ export function Relatorio() {
            <h2 className="text-lg font-medium text-slate-800">Gerar Relatório Resumo</h2>
         </div>
         <div className="p-6 flex items-center gap-4">
-          <select value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)} className="w-full max-w-md border-slate-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800">
-            <option value="">Selecione o estudante...</option>
-            {state.students.map(s => (
-              <option key={s.id} value={s.id}>{s.name} - {s.city}</option>
-            ))}
-          </select>
+          <div className="w-full max-w-md">
+            <StudentSelect
+              students={state.students}
+              value={selectedStudentId}
+              onChange={setSelectedStudentId}
+              placeholder="Selecione ou busque o estudante..."
+            />
+          </div>
           <button 
             disabled={!student}
             onClick={() => window.print()}
@@ -55,10 +58,11 @@ export function Relatorio() {
                 <p className="text-slate-500 mt-2">Documento de análise técnica para concessão de auxílio</p>
               </div>
 
-              <div className="grid grid-cols-2 text-sm">
-                 <div><strong>Estudante:</strong> {student.name}</div>
-                 <div><strong>Cidade:</strong> {student.city}</div>
-                 <div><strong>Data do Cadastro:</strong> {new Date(student.createdAt).toLocaleDateString('pt-BR')}</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-slate-50 p-4 border rounded-lg">
+                 <div><strong className="block text-slate-500 text-xs mb-1">Estudante</strong> {student.name}</div>
+                 <div><strong className="block text-slate-500 text-xs mb-1">Edital</strong> {student.edital || '-'}</div>
+                 <div><strong className="block text-slate-500 text-xs mb-1">Cidade</strong> {student.city}</div>
+                 <div><strong className="block text-slate-500 text-xs mb-1">Cadastro</strong> {new Date(student.createdAt).toLocaleDateString('pt-BR')}</div>
               </div>
 
               <div className="space-y-4">

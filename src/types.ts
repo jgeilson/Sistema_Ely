@@ -17,6 +17,7 @@ export interface Student {
   id: string; // Gerado via UUID ou usando o nome (como no script original)
   name: string;
   city: string;
+  edital: string;
   idDocs: Document[];
   incomeDocs: Document[];
   incomeValue: number;

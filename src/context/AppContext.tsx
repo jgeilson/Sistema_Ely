@@ -1,7 +1,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Student, NucleusMember, ClassificationResult } from '../types';
 import { MINIMUM_WAGE } from '../constants';
-import { initializeSpreadsheet, fetchAllData, appendStudentToSheet, appendNucleusToSheet } from '../lib/sheets';
+import { 
+  initializeSpreadsheet, 
+  fetchAllData, 
+  appendStudentToSheet, 
+  appendNucleusToSheet,
+  updateStudentInSheet,
+  deleteStudentFromSheet,
+  updateNucleusInSheet,
+  deleteNucleusFromSheet
+} from '../lib/sheets';
 
 interface AppState {
   students: Student[];
@@ -15,12 +24,13 @@ interface AppContextType {
   configRequired: boolean;
   retryConnection: () => Promise<void>;
   addStudent: (student: Student) => Promise<void>;
-  updateStudent: (student: Student) => void;
-  deleteStudent: (studentId: string) => void;
+  updateStudent: (student: Student) => Promise<void>;
+  deleteStudent: (studentId: string) => Promise<void>;
   addNucleusMember: (member: NucleusMember) => Promise<void>;
-  updateNucleusMember: (member: NucleusMember) => void;
-  deleteNucleusMember: (memberId: string) => void;
+  updateNucleusMember: (member: NucleusMember) => Promise<void>;
+  deleteNucleusMember: (memberId: string) => Promise<void>;
   getClassifications: () => ClassificationResult[];
+  getEditais: () => string[];
 }
 
 const defaultState: AppState = {
@@ -70,19 +80,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateStudent = (student: Student) => {
+  const updateStudent = async (student: Student) => {
     setState(s => ({
       ...s,
       students: s.students.map(st => st.id === student.id ? student : st)
     }));
+    try {
+      if (!configRequired) {
+        await updateStudentInSheet(student);
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar na planilha:", e);
+    }
   };
 
-  const deleteStudent = (studentId: string) => {
+  const deleteStudent = async (studentId: string) => {
     setState(s => ({
       ...s,
       students: s.students.filter(st => st.id !== studentId),
       nucleusMembers: s.nucleusMembers.filter(n => n.studentId !== studentId)
     }));
+    try {
+      if (!configRequired) {
+        await deleteStudentFromSheet(studentId);
+      }
+    } catch (e) {
+      console.error("Erro ao deletar na planilha:", e);
+    }
   };
 
   const addNucleusMember = async (member: NucleusMember) => {
@@ -96,18 +120,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateNucleusMember = (member: NucleusMember) => {
+  const updateNucleusMember = async (member: NucleusMember) => {
     setState(s => ({
       ...s,
       nucleusMembers: s.nucleusMembers.map(n => n.id === member.id ? member : n)
     }));
+    try {
+      if (!configRequired) {
+        await updateNucleusInSheet(member);
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar parente na planilha:", e);
+    }
   };
 
-  const deleteNucleusMember = (memberId: string) => {
+  const deleteNucleusMember = async (memberId: string) => {
     setState(s => ({
       ...s,
       nucleusMembers: s.nucleusMembers.filter(n => n.id !== memberId)
     }));
+    try {
+      if (!configRequired) {
+        await deleteNucleusFromSheet(memberId);
+      }
+    } catch (e) {
+      console.error("Erro ao deletar parente na planilha:", e);
+    }
   };
 
   const getClassifications = (): ClassificationResult[] => {
@@ -165,6 +203,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const getEditais = () => {
+    const set = new Set(state.students.map(s => s.edital).filter(Boolean));
+    return Array.from(set).sort();
+  };
+
   return (
     <AppContext.Provider value={{
       state,
@@ -178,7 +221,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addNucleusMember,
       updateNucleusMember,
       deleteNucleusMember,
-      getClassifications
+      getClassifications,
+      getEditais
     }}>
       {children}
     </AppContext.Provider>

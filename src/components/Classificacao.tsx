@@ -1,27 +1,81 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MINIMUM_WAGE } from '../constants';
-import { Download, Users, Briefcase, FileWarning, CheckCircle } from 'lucide-react';
+import { Download, Users, Briefcase, FileWarning, CheckCircle, Search, Filter } from 'lucide-react';
 
 export function Classificacao() {
-  const { getClassifications } = useAppContext();
+  const { getClassifications, getEditais } = useAppContext();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'Todos' | 'Deferido' | 'Indeferido'>('Todos');
+  const [selectedEdital, setSelectedEdital] = useState<string>('Todos');
+  
+  const editais = getEditais();
   
   const classifications = getClassifications();
+
+  const filteredClassifications = useMemo(() => {
+    return classifications.filter(c => {
+      const matchName = c.student.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = filterStatus === 'Todos' || c.status === filterStatus;
+      const matchEdital = selectedEdital === 'Todos' || c.student.edital === selectedEdital;
+      return matchName && matchStatus && matchEdital;
+    });
+  }, [classifications, searchTerm, filterStatus, selectedEdital]);
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-medium text-slate-800">Classificação Final</h2>
-            <p className="text-sm text-slate-500 mt-1">Lista de estudantes deferidos e indeferidos ordenada por pontuação (Salário mínimo ref: R$ {MINIMUM_WAGE.toFixed(2)}).</p>
+            <p className="text-sm text-slate-500 mt-1">Lista ordenada por pontuação (Salário mínimo ref: R$ {MINIMUM_WAGE.toFixed(2)}).</p>
           </div>
-          <button 
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4" /> Exportar / Imprimir
-          </button>
+          
+          <div className="flex flex-wrap items-center gap-3 no-print">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Buscar por nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+              />
+            </div>
+            
+            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+               <select
+                 value={selectedEdital}
+                 onChange={(e) => setSelectedEdital(e.target.value)}
+                 className="px-3 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 font-medium"
+               >
+                 <option value="Todos">Todos os Editais</option>
+                 {editais.map(e => <option key={e} value={e}>{e}</option>)}
+               </select>
+            </div>
+
+            <div className="relative flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+               <div className="pl-3 pr-2 py-2 bg-slate-50 border-r border-slate-200 text-slate-500 hidden sm:block">
+                 <Filter className="w-4 h-4" />
+               </div>
+               <select
+                 value={filterStatus}
+                 onChange={(e) => setFilterStatus(e.target.value as any)}
+                 className="px-3 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700"
+               >
+                 <option value="Todos">Todos</option>
+                 <option value="Deferido">Apenas Deferidos</option>
+                 <option value="Indeferido">Apenas Indeferidos</option>
+               </select>
+            </div>
+
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4" /> Imprimir
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto print-visible">
@@ -38,13 +92,13 @@ export function Classificacao() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {classifications.length === 0 ? (
+              {filteredClassifications.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
-                    Nenhum estudante cadastrado para classificação.
+                    Nenhum estudante encontrado com estes filtros.
                   </td>
                 </tr>
-              ) : classifications.map((item, idx) => (
+              ) : filteredClassifications.map((item, idx) => (
                 <tr key={item.student.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-900">{item.student.name}</div>

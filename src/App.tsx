@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { Dashboard } from './components/Dashboard';
 import { CadastroEstudante } from './components/CadastroEstudante';
 import { CadastroNucleo } from './components/CadastroNucleo';
 import { Classificacao } from './components/Classificacao';
 import { Relatorio } from './components/Relatorio';
-import { Layers, GraduationCap, Users, FileBarChart, Trophy, Loader2, Key, AlertTriangle } from 'lucide-react';
+import { Layers, GraduationCap, Users, FileBarChart, Trophy, Loader2, Key, AlertTriangle, LayoutDashboard } from 'lucide-react';
 
 function MainWorkspace() {
-  const [activeTab, setActiveTab] = useState<'estudante' | 'nucleo' | 'relatorio' | 'classificacao'>('estudante');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'estudante' | 'nucleo' | 'relatorio' | 'classificacao'>('dashboard');
   const { loading, configRequired, retryConnection, spreadsheetId } = useAppContext();
 
   if (loading) {
@@ -26,12 +27,17 @@ function MainWorkspace() {
            <div className="p-6 border-b border-slate-800">
              <div className="flex items-center gap-3 text-white">
                <Layers className="w-6 h-6 text-indigo-400" />
-               <h1 className="font-bold text-lg tracking-tight">AvaliaSócio</h1>
+               <h1 className="font-bold text-lg tracking-tight">Painel de Assistência Social</h1>
              </div>
-             <p className="text-xs text-slate-500 mt-2">Painel de Assistência Social</p>
            </div>
            
            <nav className="p-4 space-y-2 flex-grow">
+             <button
+               onClick={() => setActiveTab('dashboard')}
+               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${activeTab === 'dashboard' ? 'bg-indigo-600/10 text-indigo-400' : 'hover:bg-slate-800 hover:text-white'}`}
+             >
+               <LayoutDashboard className="w-5 h-5" /> Visão Geral
+             </button>
              <button
                onClick={() => setActiveTab('estudante')}
                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${activeTab === 'estudante' ? 'bg-indigo-600/10 text-indigo-400' : 'hover:bg-slate-800 hover:text-white'}`}
@@ -90,6 +96,7 @@ function MainWorkspace() {
              </div>
            )}
 
+           {activeTab === 'dashboard' && <Dashboard />}
            {activeTab === 'estudante' && <CadastroEstudante />}
            {activeTab === 'nucleo' && <CadastroNucleo />}
            {activeTab === 'classificacao' && <Classificacao />}

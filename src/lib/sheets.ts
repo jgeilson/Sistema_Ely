@@ -33,7 +33,8 @@ export const fetchAllData = async () => {
     incomeDocs: row[4] ? JSON.parse(row[4]) : [],
     incomeValue: Number(row[5] || 0),
     scores: row[6] ? JSON.parse(row[6]) : { FE: 0, RF: 0, IV: 0, FA: 0 },
-    createdAt: row[7] || new Date().toISOString()
+    createdAt: row[7] || new Date().toISOString(),
+    edital: row[8] || ''
   }));
 
   const nucleusMembers: NucleusMember[] = nucleoRows.map((row: any[]) => ({
@@ -57,6 +58,22 @@ export const appendStudentToSheet = async (student: Student) => {
   if (!response.ok) throw new Error('Falha ao salvar estudante na planilha');
 };
 
+export const updateStudentInSheet = async (student: Student) => {
+  const response = await fetch('/api/sheets/student/update', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ student })
+  });
+  if (!response.ok) throw new Error('Falha ao atualizar estudante na planilha');
+};
+
+export const deleteStudentFromSheet = async (id: string) => {
+  const response = await fetch(`/api/sheets/student/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) throw new Error('Falha ao deletar estudante na planilha');
+};
+
 export const appendNucleusToSheet = async (member: NucleusMember) => {
   const response = await fetch('/api/sheets/nucleus', {
     method: 'POST',
@@ -64,4 +81,20 @@ export const appendNucleusToSheet = async (member: NucleusMember) => {
     body: JSON.stringify({ member })
   });
   if (!response.ok) throw new Error('Falha ao salvar parente na planilha');
+};
+
+export const updateNucleusInSheet = async (member: NucleusMember) => {
+  const response = await fetch('/api/sheets/nucleus/update', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ member })
+  });
+  if (!response.ok) throw new Error('Falha ao atualizar parente na planilha');
+};
+
+export const deleteNucleusFromSheet = async (id: string) => {
+  const response = await fetch(`/api/sheets/nucleus/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) throw new Error('Falha ao deletar parente na planilha');
 };
