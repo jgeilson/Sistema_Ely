@@ -8,8 +8,13 @@ import { Relatorio } from './components/Relatorio';
 import { Layers, GraduationCap, Users, FileBarChart, Trophy, Loader2, AlertTriangle, LayoutDashboard } from 'lucide-react';
 
 function MainWorkspace() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'estudante' | 'nucleo' | 'relatorio' | 'classificacao'>('dashboard');
-  const { loading, configRequired, retryConnection, spreadsheetId } = useAppContext();
+  /* 
+   * COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB:
+   * Sincronização do estado de aba ativo com o AppContext global.
+   * Evita a duplicação de estados de roteamento interno e facilita redirecionar
+   * o fluxo operacional do usuário diretamente por meio de atalhos e botões de ação rápidos.
+   */
+  const { loading, configRequired, retryConnection, spreadsheetId, activeTab, setActiveTab } = useAppContext();
 
   if (loading) {
     return (
@@ -64,18 +69,6 @@ function MainWorkspace() {
              </button>
            </nav>
 
-           <div className="p-4 border-t border-slate-800">
-             {spreadsheetId && (
-               <a 
-                 href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-900/30 text-green-400 rounded-lg text-xs font-medium hover:bg-green-900/50 transition-colors"
-               >
-                 Acessar Banco de Dados (Sheets)
-               </a>
-             )}
-           </div>
         </aside>
 
         {/* Main Workspace */}

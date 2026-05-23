@@ -31,6 +31,16 @@ interface AppContextType {
   deleteNucleusMember: (memberId: string) => Promise<void>;
   getClassifications: () => ClassificationResult[];
   getEditais: () => string[];
+  /* 
+   * COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB:
+   * Estados adicionados ao contexto global para permitir a comunicação fluida entre abas.
+   * Permite que ao cadastrar/clonar um estudante, possamos sugerir o redirecionamento direto
+   * para o cadastro de familiares já com o estudante referenciado pré-selecionado.
+   */
+  activeTab: 'dashboard' | 'estudante' | 'nucleo' | 'relatorio' | 'classificacao';
+  setActiveTab: (tab: 'dashboard' | 'estudante' | 'nucleo' | 'relatorio' | 'classificacao') => void;
+  selectedStudentIdForNucleus: string | null;
+  setSelectedStudentIdForNucleus: (id: string | null) => void;
 }
 
 const defaultState: AppState = {
@@ -45,6 +55,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const [configRequired, setConfigRequired] = useState(false);
+
+  /* 
+   * COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB:
+   * Inicialização dos estados de navegação de aba e pré-seleção no provedor global.
+   */
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'estudante' | 'nucleo' | 'relatorio' | 'classificacao'>('dashboard');
+  const [selectedStudentIdForNucleus, setSelectedStudentIdForNucleus] = useState<string | null>(null);
 
   useEffect(() => {
     retryConnection();
@@ -222,7 +239,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateNucleusMember,
       deleteNucleusMember,
       getClassifications,
-      getEditais
+      getEditais,
+      activeTab,
+      setActiveTab,
+      selectedStudentIdForNucleus,
+      setSelectedStudentIdForNucleus
     }}>
       {children}
     </AppContext.Provider>

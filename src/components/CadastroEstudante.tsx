@@ -2,17 +2,28 @@ import React, { useState } from 'react';
 import { createDefaultDocs, DEFAULT_ID_DOCS_STUDENT, DEFAULT_INCOME_DOCS_STUDENT } from '../constants';
 import { DocStatus, Student } from '../types';
 import { useAppContext } from '../context/AppContext';
-import { Check, Info, Trash2, X, Search, FilePenLine } from 'lucide-react';
+import { Check, Info, Trash2, X, Search, FilePenLine, Copy, Users } from 'lucide-react';
 import { EditalSelect } from './EditalSelect';
 import { StudentSelect } from './StudentSelect';
 
 export function CadastroEstudante() {
-  const { state, addStudent, updateStudent, deleteStudent, getEditais } = useAppContext();
+  const { 
+    state, 
+    addStudent, 
+    updateStudent, 
+    deleteStudent, 
+    getEditais, 
+    addNucleusMember,
+    setActiveTab,
+    setSelectedStudentIdForNucleus
+  } = useAppContext();
   const editais = getEditais();
   
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [isNewRegistration, setIsNewRegistration] = useState(false);
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
+  const [targetEdital, setTargetEdital] = useState('');
 
   const [edital, setEdital] = useState(editais.length > 0 ? editais[editais.length - 1] : '');
   const [name, setName] = useState('');
@@ -93,10 +104,77 @@ export function CadastroEstudante() {
     setTimeout(() => setSuccess(''), 3000);
   };
 
+  /**
+   * COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB:
+   * Esta função realiza o processo de duplicação total (deep clone) de um estudante e seus familiares
+   * vinculados para um Edital de destino diferente. Usado para estudantes com inscrições múltiplas.
+   * 
+   * Características de portabilidade:
+   * - Gera novos IDs RFC4122 (UUIDs) para todos os registros clonados para evitar colisões.
+   * - Replica o grupo familiar de forma recursiva (um-para-muitos) mantendo a integridade referencial (studentId).
+   * - Sincroniza individualmente com a fonte de dados (Google Sheets) via API REST e atualiza o estado cliente.
+   */
+  const handleDuplicate = async () => {
+    if (!targetEdital.trim()) {
+      alert("Por favor, digite ou selecione um Edital de destino válido.");
+      return;
+    }
+    if (targetEdital === edital) {
+      alert("O Edital de destino deve ser diferente do Edital atual.");
+      return;
+    }
+
+    try {
+      const currentStudent = state.students.find(s => s.id === editingStudentId);
+      if (!currentStudent) {
+        alert("Erro: Cadastro estudantil original não foi localizado!");
+        return;
+      }
+
+      const newStudentId = crypto.randomUUID();
+      
+      // Duplicando o registro do estudante no novo Edital informado
+      const duplicatedStudent: Student = {
+        ...currentStudent,
+        id: newStudentId,
+        edital: targetEdital,
+        createdAt: new Date().toISOString()
+      };
+
+      await addStudent(duplicatedStudent);
+
+      // Filtrando e duplicando os membros do núcleo familiar (grupo doméstico)
+      const familyMembers = state.nucleusMembers.filter(m => m.studentId === editingStudentId);
+      for (const member of familyMembers) {
+        const duplicatedMember = {
+          ...member,
+          id: crypto.randomUUID(),
+          studentId: newStudentId
+        };
+        await addNucleusMember(duplicatedMember);
+      }
+
+      setSuccess(`Duplicação efetuada! Estudante e ${familyMembers.length} familiares migrados para o "${targetEdital}".`);
+      
+      // Mantém o usuário visualizando o registro que acabou de ser clonado no novo Edital
+      setEditingStudentId(newStudentId);
+      setEdital(targetEdital);
+      setDuplicating(false);
+      setTargetEdital('');
+      
+      setTimeout(() => setSuccess(''), 4500);
+    } catch (error) {
+      console.error("Erro durante a clonagem de registros:", error);
+      alert("Houve uma falha na replicação do prontuário.");
+    }
+  };
+
   const resetForm = () => {
     setEditingStudentId(null);
     setIsNewRegistration(false);
     setDeletingStudentId(null);
+    setDuplicating(false);
+    setTargetEdital('');
     setName('');
     setCity('');
     setIdDocs(createDefaultDocs(DEFAULT_ID_DOCS_STUDENT));
@@ -105,11 +183,24 @@ export function CadastroEstudante() {
     setScores({ FE: '', RF: '', IV: '', FA: '' });
   };
 
+  /* 
+   * COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB:
+   * StatusSelect estilizado com seletor nativo aprimorado para fornecer dicas visuais 
+   * automáticas baseadas em contraste de cor adequado e bordas arredondadas.
+   */
   const StatusSelect = ({ val, onChange }: { val: DocStatus, onChange: (v: string) => void }) => (
     <select 
       value={val} 
       onChange={(e) => onChange(e.target.value)}
-      className={`border rounded p-1 text-xs font-semibold ${val === 'Completo' ? 'bg-green-50 text-green-700 border-green-200' : val === 'Incompleto' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : val === 'Não Enviou' ? 'bg-red-50 text-red-705 border-red-200' : 'bg-gray-50 text-gray-450 border-gray-200'}`}
+      className={`border text-[11px] font-semibold rounded-lg px-2 py-1.5 transition-all outline-none focus:ring-2 cursor-pointer ${
+        val === 'Completo' 
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-250 focus:ring-emerald-200' 
+          : val === 'Incompleto' 
+          ? 'bg-amber-50 text-amber-705 border-amber-250 focus:ring-amber-200' 
+          : val === 'Não Enviou' 
+          ? 'bg-rose-50 text-rose-705 border-rose-250 focus:ring-rose-200' 
+          : 'bg-slate-50 text-slate-500 border-slate-200 focus:ring-slate-200'
+      }`}
     >
       <option value="Completo">Completo</option>
       <option value="Incompleto">Incompleto</option>
@@ -202,9 +293,10 @@ export function CadastroEstudante() {
           </div>
 
           <form onSubmit={handleSave} className="p-6 space-y-8">
+            {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Campo de dados principais estruturados com bordas refinadas e efeitos de focar */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Número do Edital</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Número do Edital</label>
                 <EditalSelect 
                   editais={editais} 
                   value={edital} 
@@ -212,159 +304,292 @@ export function CadastroEstudante() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nome do Estudante</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nome do Estudante</label>
                 <input 
                   type="text" 
                   value={name} 
                   onChange={e => setName(e.target.value)} 
-                  placeholder=""
-                  className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-medium" 
+                  placeholder="Nome completo do candidato"
+                  className="w-full border-slate-200 hover:border-slate-350 rounded-xl shadow-sm border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 font-semibold transition-all" 
                   required 
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Município</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Município de Residência</label>
                 <input 
                   type="text" 
                   value={city} 
                   onChange={e => setCity(e.target.value)} 
-                  placeholder=""
-                  className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-medium" 
+                  placeholder="Ex: Rio de Janeiro"
+                  className="w-full border-slate-200 hover:border-slate-350 rounded-xl shadow-sm border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 font-semibold transition-all" 
                   required 
                 />
               </div>
             </div>
 
+            {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Listas de documentos remodeladas para se tornarem cartões adaptativos focados no status atual do anexo */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <h3 className="text-xs font-bold text-slate-700 border-b pb-2 flex items-center gap-2 uppercase tracking-wide">
-                  <Info className="w-4 h-4 text-blue-500" /> Comprovações de Identificação
+                <h3 className="text-xs font-bold text-slate-700 border-b border-slate-150 pb-2 flex items-center gap-2 uppercase tracking-widest">
+                  <span className="w-1.5 h-3.5 bg-blue-500 rounded-full"></span>
+                  Comprovações de Identificação
                 </h3>
-                {idDocs.map((doc, i) => {
-                  const isNotApplicable = doc.status === 'Não se Aplica';
-                  return (
-                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm p-2 hover:bg-slate-50 rounded-lg">
-                      <span className="font-medium text-slate-650 text-xs w-48">{doc.name}</span>
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
-                        <input 
-                          type="text" 
-                          placeholder="Obs / Qual?..." 
-                          value={doc.observation || ''} 
-                          onChange={e => handleDocChange('id', i, 'observation', e.target.value)} 
-                          disabled={isNotApplicable} 
-                          className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" 
-                        />
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {idDocs.map((doc, i) => {
+                    const isNotApplicable = doc.status === 'Não se Aplica';
+                    const activeBorderClasses: Record<DocStatus, string> = {
+                      'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
+                      'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-150',
+                      'Não Enviou': 'border-l-4 border-l-rose-500 bg-rose-50/10 hover:bg-rose-50/20 border-slate-150',
+                      'Não se Aplica': 'border-l-4 border-l-slate-300 bg-slate-50/30 text-slate-400 border-slate-150'
+                    };
+                    const colorClass = activeBorderClasses[doc.status] || 'bg-white';
+
+                    return (
+                      <div key={i} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.005] ${colorClass}`}>
+                        <span className="font-bold text-slate-700 text-[11px] sm:max-w-[180px] leading-tight shrink-0">{doc.name}</span>
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <StatusSelect val={doc.status} onChange={(v) => handleDocChange('id', i, 'status', v)} />
+                          <input 
+                            type="text" 
+                            placeholder="Adicionar nota..." 
+                            value={doc.observation || ''} 
+                            onChange={e => handleDocChange('id', i, 'observation', e.target.value)} 
+                            disabled={isNotApplicable} 
+                            className="border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 w-32 md:w-40 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-105 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-medium" 
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xs font-bold text-slate-700 border-b pb-2 flex items-center gap-2 uppercase tracking-wide">
-                  <Info className="w-4 h-4 text-emerald-500" /> Comprovações de Rendimentos
+                <h3 className="text-xs font-bold text-slate-700 border-b border-slate-150 pb-2 flex items-center gap-2 uppercase tracking-widest">
+                  <span className="w-1.5 h-3.5 bg-emerald-500 rounded-full"></span>
+                  Comprovações de Rendimentos
                 </h3>
-                {incomeDocs.map((doc, i) => {
-                  const isNotApplicable = doc.status === 'Não se Aplica';
-                  return (
-                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm p-2 hover:bg-slate-50 rounded-lg">
-                      <span className="font-medium text-slate-650 text-xs w-48">{doc.name}</span>
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
-                        <input 
-                          type="text" 
-                          placeholder="Obs / Qual?..." 
-                          value={doc.observation || ''} 
-                          onChange={e => handleDocChange('income', i, 'observation', e.target.value)} 
-                          disabled={isNotApplicable} 
-                          className="border-slate-300 shadow-sm border rounded p-1 w-32 md:w-48 text-xs focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400" 
-                        />
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {incomeDocs.map((doc, i) => {
+                    const isNotApplicable = doc.status === 'Não se Aplica';
+                    const activeBorderClasses: Record<DocStatus, string> = {
+                      'Completo': 'border-l-4 border-l-emerald-500 bg-emerald-50/10 hover:bg-emerald-50/20 border-slate-150',
+                      'Incompleto': 'border-l-4 border-l-amber-500 bg-amber-50/10 hover:bg-amber-50/20 border-slate-150',
+                      'Não Enviou': 'border-l-4 border-l-rose-500 bg-rose-50/10 hover:bg-rose-50/20 border-slate-150',
+                      'Não se Aplica': 'border-l-4 border-l-slate-300 bg-slate-50/30 text-slate-400 border-slate-150'
+                    };
+                    const colorClass = activeBorderClasses[doc.status] || 'bg-white';
+
+                    return (
+                      <div key={i} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm p-3 rounded-xl border transition-all duration-200 hover:shadow-xs md:hover:scale-[1.005] ${colorClass}`}>
+                        <span className="font-bold text-slate-700 text-[11px] sm:max-w-[180px] leading-tight shrink-0">{doc.name}</span>
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <StatusSelect val={doc.status} onChange={(v) => handleDocChange('income', i, 'status', v)} />
+                          <input 
+                            type="text" 
+                            placeholder="Adicionar nota..." 
+                            value={doc.observation || ''} 
+                            onChange={e => handleDocChange('income', i, 'observation', e.target.value)} 
+                            disabled={isNotApplicable} 
+                            className="border-slate-200 bg-white hover:border-slate-300 shadow-sm border rounded-lg py-1 px-2.5 w-32 md:w-40 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-105 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-150 transition-all font-medium" 
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-200 pt-6">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">Rendimento e Critérios de Pontuação do Edital</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                   <label className="block text-[11px] font-bold text-slate-600 mb-1 leading-normal">Renda Mensal Individual (R$)</label>
-                   <input type="number" step="0.01" value={incomeValue} onChange={e => setIncomeValue(e.target.value)} placeholder="0.00" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold" />
+            {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Blocos individuais parametrizados (KPI Cards) para cálculo do índice de vulnerabilidade e renda extra do edital */}
+            <div className="border-t border-slate-250 pt-6">
+              <h3 className="text-xs font-bold text-slate-705 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-3.5 bg-indigo-550 rounded-full"></span>
+                Rendimento e Critérios de Pontuação do Edital
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-200/85 hover:border-slate-300 transition-colors shadow-xs">
+                   <div className="flex items-center justify-between mb-1">
+                     <span className="text-[9px] font-bold text-slate-450 uppercase tracking-widest">Renda Nominal</span>
+                   </div>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2">Renda Mensal (R$)</label>
+                   <div className="relative">
+                     <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">R$</span>
+                     <input 
+                       type="number" 
+                       step="0.01" 
+                       value={incomeValue} 
+                       onChange={e => setIncomeValue(e.target.value)} 
+                       placeholder="0.00" 
+                       className="w-full border-slate-200 hover:border-slate-300 rounded-xl shadow-xs border py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-indigo-500 font-bold text-slate-800 transition-all" 
+                     />
+                   </div>
                 </div>
-                <div>
-                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Força de Estudo / Desempenho">Pontuação extra: FE</label>
-                   <input type="number" value={scores.FE} onChange={e => setScores({...scores, FE: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
+
+                <div className="bg-blue-50/15 p-4 rounded-2xl border border-blue-100 hover:border-blue-200 transition-colors shadow-xs">
+                   <div className="flex items-center justify-between mb-1">
+                     <span className="text-[9px] font-bold text-blue-550 uppercase tracking-widest">Score Extra</span>
+                     <span className="bg-blue-100/60 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Força de Estudo">FE</span>
+                   </div>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Força de Estudo / Desempenho">Força de Estudo</label>
+                   <input 
+                     type="number" 
+                     value={scores.FE} 
+                     onChange={e => setScores({...scores, FE: e.target.value})} 
+                     placeholder="0" 
+                     className="w-full border-slate-200 hover:border-slate-300 bg-white focus:bg-white rounded-xl shadow-xs border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-bold text-center text-slate-800 transition-all" 
+                   />
                 </div>
-                <div>
-                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Renda Familiar">Pontuação extra: RF</label>
-                   <input type="number" value={scores.RF} onChange={e => setScores({...scores, RF: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
+
+                <div className="bg-emerald-50/15 p-4 rounded-2xl border border-emerald-100 hover:border-emerald-200 transition-colors shadow-xs">
+                   <div className="flex items-center justify-between mb-1">
+                     <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Score Extra</span>
+                     <span className="bg-emerald-105/65 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Renda Familiar">RF</span>
+                   </div>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Renda Familiar">Renda Familiar</label>
+                   <input 
+                     type="number" 
+                     value={scores.RF} 
+                     onChange={e => setScores({...scores, RF: e.target.value})} 
+                     placeholder="0" 
+                     className="w-full border-slate-200 hover:border-slate-300 bg-white focus:bg-white rounded-xl shadow-xs border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 font-bold text-center text-slate-800 transition-all" 
+                   />
                 </div>
-                <div>
-                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Índice de Vulnerabilidade">Pontuação extra: IV</label>
-                   <input type="number" value={scores.IV} onChange={e => setScores({...scores, IV: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
+
+                <div className="bg-amber-50/15 p-4 rounded-2xl border border-amber-100/70 hover:border-amber-250 transition-colors shadow-xs">
+                   <div className="flex items-center justify-between mb-1">
+                     <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Score Extra</span>
+                     <span className="bg-amber-100/60 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Índice de Vulnerabilidade">IV</span>
+                   </div>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Índice de Vulnerabilidade">Vulnerabilidade (IV)</label>
+                   <input 
+                     type="number" 
+                     value={scores.IV} 
+                     onChange={e => setScores({...scores, IV: e.target.value})} 
+                     placeholder="0" 
+                     className="w-full border-slate-200 hover:border-slate-300 bg-white focus:bg-white rounded-xl shadow-xs border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-55 focus:border-amber-500 font-bold text-center text-slate-800 transition-all" 
+                   />
                 </div>
-                <div>
-                   <label className="block text-[11px] font-bold text-slate-650 mb-1 leading-normal" title="Pontuação - Fator de Ajuste">Pontuação extra: FA</label>
-                   <input type="number" value={scores.FA} onChange={e => setScores({...scores, FA: e.target.value})} placeholder="0" className="w-full border-slate-300 rounded-lg shadow-sm border p-2 text-sm focus:ring-blue-500 focus:border-blue-500 font-semibold text-center" />
+
+                <div className="bg-purple-50/15 p-4 rounded-2xl border border-purple-100 hover:border-purple-200 transition-colors shadow-xs">
+                   <div className="flex items-center justify-between mb-1">
+                     <span className="text-[9px] font-bold text-purple-600 uppercase tracking-widest">Score Extra</span>
+                     <span className="bg-purple-100/60 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full" title="Fator de Ajuste">FA</span>
+                   </div>
+                   <label className="block text-xs font-bold text-slate-700 leading-normal mb-2" title="Pontuação - Fator de Ajuste">Ajuste Técnico (FA)</label>
+                   <input 
+                     type="number" 
+                     value={scores.FA} 
+                     onChange={e => setScores({...scores, FA: e.target.value})} 
+                     placeholder="0" 
+                     className="w-full border-slate-200 hover:border-slate-300 bg-white focus:bg-white rounded-xl shadow-xs border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-105 focus:border-purple-500 font-bold text-center text-slate-800 transition-all" 
+                   />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-450 mt-2">
-                *Os campos de pontuação são atribuídos conforme análise, somando-se ao índice de renda.
+              <p className="text-[10px] text-slate-400 mt-3 font-medium">
+                *Os campos de pontuação extra (FE, RF, IV, FA) são atribuídos facultativamente pela comissão avaliadora e incidem sobre a nota de classificação global.
               </p>
             </div>
 
-            <div className="flex justify-between items-center gap-3 pt-6 border-t border-slate-200">
-               <div className="flex-1">
-                 {editingStudentId && (
-                   <>
-                     {deletingStudentId === editingStudentId ? (
-                       <div className="flex items-center gap-2 bg-red-50 text-red-700 py-2 px-3.5 rounded-lg border border-red-200 text-xs font-semibold w-fit animate-scaleIn">
-                         <span>Excluir permanentemente este estudante e todos os seus familiares vinculados?</span>
-                         <button 
-                           type="button" 
-                           onClick={() => confirmDelete(editingStudentId)}
-                           className="p-1 px-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
-                         >
-                           Sim, Excluir Tudo
-                         </button>
-                         <button 
-                           type="button" 
-                           onClick={() => setDeletingStudentId(null)}
-                           className="p-1 px-2.5 bg-white text-slate-705 text-xs font-semibold hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
-                         >
-                           Cancelar
-                         </button>
-                       </div>
-                     ) : (
-                       <button 
-                         type="button" 
-                         onClick={() => setDeletingStudentId(editingStudentId)}
-                         className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-150 font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs"
-                       >
-                         <Trash2 className="w-4 h-4" />
-                         Excluir Estudante e Histórico
-                       </button>
-                     )}
-                   </>
-                 )}
-               </div>
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-slate-200">
+                <div className="flex flex-wrap items-center gap-3 flex-1 w-full">
+                  {editingStudentId && (
+                    <>
+                      {deletingStudentId === editingStudentId ? (
+                        <div className="flex items-center gap-2 bg-red-50 text-red-700 py-2 px-3.5 rounded-lg border border-red-200 text-xs font-semibold w-fit animate-scaleIn">
+                          <span>Excluir permanentemente este estudante e todos os seus familiares vinculados?</span>
+                          <button 
+                            type="button" 
+                            onClick={() => confirmDelete(editingStudentId)}
+                            className="p-1 px-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
+                          >
+                            Sim, Excluir Tudo
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => setDeletingStudentId(null)}
+                            className="p-1 px-2.5 bg-white text-slate-705 text-xs font-semibold hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={() => setDeletingStudentId(editingStudentId)}
+                          className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-150 font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Excluir Estudante e Histórico
+                        </button>
+                      )}
 
-               <div className="flex gap-3">
-                 <button 
-                   type="button" 
-                   onClick={resetForm}
-                   className="cursor-pointer border border-slate-300 text-slate-705 font-semibold py-2 px-6 rounded-lg hover:bg-slate-50 transition-colors text-xs"
-                 >
-                   Cancelar
-                 </button>
-                 <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer text-xs shadow-sm">
-                   {editingStudentId ? 'Salvar Alterações' : 'Confirmar e Cadastrar'}
-                 </button>
-               </div>
-            </div>
+                      {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Painel flutuante de duplicação do cadastro para novo edital */}
+                      {duplicating ? (
+                        <div className="flex flex-col sm:flex-row items-end gap-2 bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-xs font-semibold w-full max-w-sm animate-scaleIn">
+                          <div className="w-full">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 text-left">Edital de Destino</label>
+                            <EditalSelect editais={editais} value={targetEdital} onChange={setTargetEdital} placeholder="Ex: Edital 02/2026" />
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <button 
+                              type="button" 
+                              onClick={handleDuplicate}
+                              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer shadow-sm"
+                            >
+                              Confirmar Cópia
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => { setDuplicating(false); setTargetEdital(''); }}
+                              className="px-3 py-2 bg-white text-slate-700 text-[11px] font-bold hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer shadow-sm"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={() => { setDuplicating(true); setTargetEdital(''); }}
+                          className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-150 font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs inline-flex"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Duplicar para outro Edital
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+ 
+                <div className="flex gap-3 shrink-0 w-full sm:w-auto justify-end">
+                  {/* COMENTÁRIOS DE EXPORTAÇÃO PARA GITHUB: Botão de atalho inteligente que agiliza o fluxo de preenchimento */}
+                  {editingStudentId && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setSelectedStudentIdForNucleus(editingStudentId);
+                        setActiveTab('nucleo');
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg hover:shadow transition-all group cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Users className="w-4 h-4 transition-transform group-hover:scale-110" />
+                      Cadastrar Grupo Familiar
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={resetForm}
+                    className="cursor-pointer border border-slate-300 text-slate-705 font-semibold py-2 px-6 rounded-lg hover:bg-slate-50 transition-colors text-xs"
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer text-xs shadow-sm">
+                    {editingStudentId ? 'Salvar Alterações' : 'Confirmar e Cadastrar'}
+                  </button>
+                </div>
+             </div>
           </form>
         </div>
       ) : (
